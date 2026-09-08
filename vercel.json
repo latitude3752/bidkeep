@@ -1,0 +1,21 @@
+{
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/sync-opportunities",
+      "schedule": "0 16 * * *"
+    },
+    {
+      "path": "/api/sync-grants",
+      "schedule": "30 16 * * *"
+    },
+    {
+      "path": "/api/sync-bonfire",
+      "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/check-sync-freshness",
+      "schedule": "0 23 * * *"
+    }
+  ]
+}
