@@ -10,7 +10,7 @@ export const OPERATOR = {
   email: "ben.alexander@fountaincitycapital.com",
   siteHost: "trybidkeep.com",
   siteUrl: "https://trybidkeep.com",
-  vertical: "federal facilities and building services",
+  vertical: "facilities and building services",
   effectiveDate: "September 8, 2026",
   monthlyPriceUsd: 100,
   seatsPerCompany: 5,

@@ -23,9 +23,9 @@ export default function PricingPage() {
         ${OPERATOR.monthlyPriceUsd}/month
       </h1>
       <p className="mt-6 text-lg leading-relaxed text-ink/75">
-        {OPERATOR.productName} is a monthly subscription for {OPERATOR.vertical}{" "}
-        federal contract and grant tracking. One company, up to{" "}
-        {OPERATOR.seatsPerCompany} seats. Sold by {OPERATOR.legalName}.
+        {OPERATOR.productName} is a monthly subscription for {OPERATOR.vertical}
+        {" "}— SAM.gov contract tracking plus a smaller grant feed. One company,
+        up to {OPERATOR.seatsPerCompany} seats. Sold by {OPERATOR.legalName}.
       </p>
 
       <div className="mt-10 rounded-2xl border border-navy-950/10 bg-white p-7">
