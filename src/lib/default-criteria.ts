@@ -4,7 +4,7 @@ export const KEEP_SEGMENTS = {
   core: {
     id: "core",
     label: "Core facilities",
-    codes: ["561210", "561720", "561730", "561612"],
+    codes: ["561210", "561720", "561730", "561612"] as readonly string[],
   },
   all: {
     id: "all",
