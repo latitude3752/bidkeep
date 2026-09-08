@@ -126,14 +126,14 @@ export default function SampleOpportunityList({
                   <td className="p-4 font-mono text-xs text-ink/60">
                     {op.noticeId ?? "—"}
                   </td>
-                  <td className="p-4 text-ink/70">{setAsideLabel(op.setAsideType)}</dd>
+                  <td className="p-4 text-ink/70">{setAsideLabel(op.setAsideType)}</td>
                   <td className="p-4 font-mono text-ink/60">{op.naicsCode ?? "—"}</td>
                   {showState && (
                     <td className="p-4 text-ink/70">
                       {op.placeOfPerformanceState ?? "—"}
                     </td>
                   )}
-                  <td className="p-4 text-ink/70">{formatDeadline(op.responseDeadline)}</dd>
+                  <td className="p-4 text-ink/70">{formatDeadline(op.responseDeadline)}</td>
                   <td className="p-4 text-ink/70">{formatPostedDate(op.postedAt)}</td>
                 </tr>
               );
