@@ -6,9 +6,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * admin session OR a subscriber with a seat -- rejecting a subscriber who
  * has neither is the exact "Not authorized" bug this suite guards against. */
 
-const { cookieGet, verifySessionToken, getCurrentSeat, from } = vi.hoisted(() => {
-  const singleResult = vi.fn(async () => ({
-    data: { title: "Widget supply", naics_code: "541330" },
+type OppFixture = {
+  title?: string;
+  naics_code?: string;
+  price_research_at?: string | null;
+  scale_checked_at?: string | null;
+};
+
+const { cookieGet, verifySessionToken, getCurrentSeat, from, singleResult } = vi.hoisted(() => {
+  const singleResult = vi.fn(async (): Promise<{ data: OppFixture; error: null }> => ({
+    data: { title: "Widget supply", naics_code: "541330", price_research_at: null, scale_checked_at: null },
     error: null,
   }));
   const eqAfterSelect = vi.fn(() => ({ single: singleResult }));
@@ -20,6 +27,7 @@ const { cookieGet, verifySessionToken, getCurrentSeat, from } = vi.hoisted(() =>
     verifySessionToken: vi.fn(),
     getCurrentSeat: vi.fn(),
     from: vi.fn(() => ({ select, update })),
+    singleResult,
   };
 });
 
@@ -51,6 +59,7 @@ vi.mock("@netacracy/bid-core", () => ({
     scale: { programType: null, estimatedCeiling: null },
     descriptionFetchError: null,
   })),
+  reportSamGovUsage: vi.fn(async () => {}),
 }));
 
 import { updateOpportunityStatus, researchOpportunityPrice, refreshOpportunityScale } from "./actions";
@@ -139,6 +148,57 @@ describe("refreshOpportunityScale upstream failures", () => {
     });
 
     const result = await refreshOpportunityScale("opp-1");
+
+    expect(result.ok).toBe(true);
+  });
+});
+
+describe("refresh cooldown", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    cookieGet.mockReturnValue(undefined);
+    verifySessionToken.mockReturnValue(true);
+  });
+
+  it("skips the SAM.gov call and reports a cooldown error for price research refreshed moments ago", async () => {
+    singleResult.mockResolvedValueOnce({
+      data: { title: "Widget supply", naics_code: "541330", price_research_at: new Date().toISOString() },
+      error: null,
+    });
+    const { searchComparableAwards } = await import("@/lib/contract-awards");
+
+    const result = await researchOpportunityPrice("opp-1");
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/try again in a few minutes/i);
+    expect(searchComparableAwards).not.toHaveBeenCalled();
+  });
+
+  it("skips the SAM.gov call and reports a cooldown error for scale classification refreshed moments ago", async () => {
+    singleResult.mockResolvedValueOnce({
+      data: { scale_checked_at: new Date().toISOString() },
+      error: null,
+    });
+    const { ensureOpportunityScale } = await import("@netacracy/bid-core");
+
+    const result = await refreshOpportunityScale("opp-1");
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/try again in a few minutes/i);
+    expect(ensureOpportunityScale).not.toHaveBeenCalled();
+  });
+
+  it("allows price research to proceed once the cooldown has elapsed", async () => {
+    singleResult.mockResolvedValueOnce({
+      data: {
+        title: "Widget supply",
+        naics_code: "541330",
+        price_research_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      },
+      error: null,
+    });
+
+    const result = await researchOpportunityPrice("opp-1");
 
     expect(result.ok).toBe(true);
   });

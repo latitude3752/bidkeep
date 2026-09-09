@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@netacracy/bid-core": "github:latitude3752/bid-core#v1.1.6",
+    "@netacracy/bid-core": "github:latitude3752/bid-core#v1.1.7",
     "@supabase/supabase-js": "^2.112.3",
     "next": "^16.3.4",
     "nodemailer": "^9.1.1",
