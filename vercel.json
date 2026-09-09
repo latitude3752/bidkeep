@@ -10,6 +10,10 @@
       "schedule": "0 15 * * *"
     },
     {
+      "path": "/api/sync-opportunities",
+      "schedule": "0 16 * * *"
+    },
+    {
       "path": "/api/check-sync-freshness",
       "schedule": "0 21 * * *"
     }
