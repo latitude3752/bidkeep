@@ -21,10 +21,18 @@ export default function SavedGeo({
       window.localStorage.setItem(storageKey, currentState);
       return;
     }
+    const params = new URLSearchParams(window.location.search);
+    // A visitor who explicitly clears the filter still has the param key in
+    // the URL (e.g. "myZip="), just with an empty value -- params.get() can't
+    // tell that apart from the param being absent entirely, which used to
+    // make an explicit clear immediately get overwritten by the remembered
+    // value below. params.has() distinguishes "cleared" from "never set".
+    if (params.has(paramName)) {
+      window.localStorage.removeItem(storageKey);
+      return;
+    }
     const saved = window.localStorage.getItem(storageKey);
     if (!saved || saved === "all") return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get(paramName)) return;
     params.set(paramName, saved);
     window.location.replace(`${window.location.pathname}?${params.toString()}`);
   }, [currentState, storageKey, paramName]);
