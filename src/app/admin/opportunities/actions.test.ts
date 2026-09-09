@@ -45,7 +45,12 @@ vi.mock("@/lib/contract-awards", () => ({
 }));
 
 vi.mock("@netacracy/bid-core", () => ({
-  ensureOpportunityScale: vi.fn(async () => {}),
+  ensureOpportunityScale: vi.fn(async () => ({
+    text: null,
+    fetchedAt: null,
+    scale: { programType: null, estimatedCeiling: null },
+    descriptionFetchError: null,
+  })),
 }));
 
 import { updateOpportunityStatus, researchOpportunityPrice, refreshOpportunityScale } from "./actions";
@@ -99,5 +104,42 @@ describe("researchOpportunityPrice upstream failures", () => {
 
     expect(result.ok).toBe(false);
     expect(result.error).toMatch(/rate-limited/i);
+  });
+});
+
+describe("refreshOpportunityScale upstream failures", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    cookieGet.mockReturnValue(undefined);
+    verifySessionToken.mockReturnValue(true);
+  });
+
+  it("returns a soft error instead of failing silently when the notice description fetch is rate-limited", async () => {
+    const { ensureOpportunityScale } = await import("@netacracy/bid-core");
+    vi.mocked(ensureOpportunityScale).mockResolvedValueOnce({
+      text: null,
+      fetchedAt: null,
+      scale: { programType: null, estimatedCeiling: null },
+      descriptionFetchError: "Notice description fetch failed: 429",
+    });
+
+    const result = await refreshOpportunityScale("opp-1");
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/rate-limited/i);
+  });
+
+  it("reports success when the description fetch has no error", async () => {
+    const { ensureOpportunityScale } = await import("@netacracy/bid-core");
+    vi.mocked(ensureOpportunityScale).mockResolvedValueOnce({
+      text: "Full notice text.",
+      fetchedAt: "2026-09-09T00:00:00Z",
+      scale: { programType: null, estimatedCeiling: null },
+      descriptionFetchError: null,
+    });
+
+    const result = await refreshOpportunityScale("opp-1");
+
+    expect(result.ok).toBe(true);
   });
 });

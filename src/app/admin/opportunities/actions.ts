@@ -78,11 +78,18 @@ export async function researchOpportunityPrice(id: string): Promise<{ ok: boolea
   return { ok: true };
 }
 
-export async function refreshOpportunityScale(id: string) {
+export async function refreshOpportunityScale(id: string): Promise<{ ok: boolean; error?: string }> {
   await requireAdminOrSubscriberSession();
-  await ensureOpportunityScale(id, { force: true });
+  const { descriptionFetchError } = await ensureOpportunityScale(id, { force: true });
   revalidatePath("/admin/opportunities");
   revalidatePath("/app/opportunities");
   revalidatePath(`/admin/opportunities/${id}`);
   revalidatePath(`/app/opportunities/${id}`);
+  if (descriptionFetchError) {
+    const friendly = descriptionFetchError.includes("429")
+      ? "SAM.gov rate-limited this request — try again in a minute."
+      : descriptionFetchError;
+    return { ok: false, error: friendly };
+  }
+  return { ok: true };
 }
