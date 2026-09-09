@@ -83,3 +83,21 @@ describe("opportunity actions authorization", () => {
     await expect(refreshOpportunityScale("opp-1")).resolves.not.toThrow();
   });
 });
+
+describe("researchOpportunityPrice upstream failures", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    cookieGet.mockReturnValue(undefined);
+    verifySessionToken.mockReturnValue(true);
+  });
+
+  it("returns a soft error instead of throwing when SAM.gov rate-limits the request", async () => {
+    const { searchComparableAwards } = await import("@/lib/contract-awards");
+    vi.mocked(searchComparableAwards).mockRejectedValueOnce(new Error("Contract Awards API error 429"));
+
+    const result = await researchOpportunityPrice("opp-1");
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/rate-limited/i);
+  });
+});

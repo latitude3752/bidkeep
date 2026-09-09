@@ -40,7 +40,7 @@ export async function updateOpportunityStatus(id: string, status: string) {
   revalidatePath(`/app/opportunities/${id}`);
 }
 
-export async function researchOpportunityPrice(id: string) {
+export async function researchOpportunityPrice(id: string): Promise<{ ok: boolean; error?: string }> {
   await requireAdminOrSubscriberSession();
   const admin = getSupabaseAdmin();
   const { data: opp, error: fetchErr } = await admin
@@ -48,21 +48,34 @@ export async function researchOpportunityPrice(id: string) {
     .select("title, naics_code")
     .eq("id", id)
     .single();
-  if (fetchErr || !opp) throw new Error(fetchErr?.message ?? "Opportunity not found");
+  if (fetchErr || !opp) return { ok: false, error: fetchErr?.message ?? "Opportunity not found" };
 
   const keyword = extractSearchKeyword(opp.title);
-  const result = await searchComparableAwards(opp.naics_code, keyword);
+  let result;
+  try {
+    result = await searchComparableAwards(opp.naics_code, keyword);
+  } catch (err) {
+    // SAM.gov's Contract Awards API is rate-limited and occasionally flaky
+    // (429/5xx) -- a raw throw here crashed the whole page with Next.js's
+    // generic error boundary instead of a message the visitor can act on.
+    const message = err instanceof Error ? err.message : "Failed to fetch price research.";
+    const friendly = message.includes("429")
+      ? "SAM.gov rate-limited this request — try again in a minute."
+      : message;
+    return { ok: false, error: friendly };
+  }
 
   const { error: updErr } = await admin
     .from("opportunities")
     .update({ price_research: result, price_research_at: result.researchedAt })
     .eq("id", id);
-  if (updErr) throw new Error(updErr.message);
+  if (updErr) return { ok: false, error: updErr.message };
 
   revalidatePath("/admin/opportunities");
   revalidatePath("/app/opportunities");
   revalidatePath(`/admin/opportunities/${id}`);
   revalidatePath(`/app/opportunities/${id}`);
+  return { ok: true };
 }
 
 export async function refreshOpportunityScale(id: string) {
