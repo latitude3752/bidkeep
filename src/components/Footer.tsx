@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { OPERATOR } from "@/lib/operator";
 import { FOOTER_SITE_NAV } from "@/lib/site-nav";
+import { BID_FAMILY } from "@/lib/bid-family";
 
 export default function Footer() {
   return (
@@ -47,6 +48,22 @@ export default function Footer() {
             ))}
           </ul>
         </div>
+      </div>
+      <div className="border-t border-cream/10 px-6 py-6 text-center text-xs text-cream/50">
+        <p>
+          Part of the Bid family from {OPERATOR.legalName}:{" "}
+          {BID_FAMILY.filter((sibling) => sibling.host !== OPERATOR.siteHost).map((sibling, i, arr) => (
+            <span key={sibling.host}>
+              <a
+                href={sibling.url}
+                className="underline decoration-cream/30 underline-offset-2 hover:text-gold-400 hover:decoration-gold-400"
+              >
+                {sibling.name}
+              </a>{" "}
+              ({sibling.vertical}){i < arr.length - 1 ? " · " : ""}
+            </span>
+          ))}
+        </p>
       </div>
       <div className="border-t border-cream/10 px-6 py-4 text-center text-xs text-cream/40">
         © {new Date().getFullYear()}{" "}

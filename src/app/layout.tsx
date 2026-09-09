@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import { OPERATOR } from "@/lib/operator";
+import { BID_FAMILY } from "@/lib/bid-family";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -45,8 +47,15 @@ const STRUCTURED_DATA = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   name: "BidKeep",
+  url: OPERATOR.siteUrl,
   applicationCategory: "BusinessApplication",
   description: DESCRIPTION,
+  brand: {
+    "@type": "Organization",
+    name: OPERATOR.legalName,
+    url: OPERATOR.portfolioUrl,
+  },
+  sameAs: BID_FAMILY.filter((sibling) => sibling.host !== OPERATOR.siteHost).map((sibling) => sibling.url),
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
