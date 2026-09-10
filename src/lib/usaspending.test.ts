@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { searchAwardsByProgramNumber, searchAwardsByProgramNumbers } from "./usaspending";
+import {
+  searchAwardPageByProgramNumber,
+  searchAwardsByProgramNumber,
+  searchAwardsByProgramNumbers,
+} from "./usaspending";
 
 function jsonResponse(body: unknown): Response {
   return { ok: true, json: async () => body } as Response;
@@ -114,6 +118,21 @@ describe("USAspending grant award search", () => {
     await expect(searchAwardsByProgramNumber("97.161")).rejects.toThrow(
       "USAspending API error 500"
     );
+  });
+
+  it("searchAwardPageByProgramNumber returns a single page and hasNext", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({
+        results: [{ generated_internal_id: "a", "Recipient Name": "Agency A" }],
+        page_metadata: { page: 2, hasNext: true },
+      })
+    );
+
+    const page = await searchAwardPageByProgramNumber("97.161", 2);
+    expect(page.awards.map((a) => a.awardId)).toEqual(["a"]);
+    expect(page.hasNext).toBe(true);
+    const body = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
+    expect(body.page).toBe(2);
   });
 
   it("searchAwardsByProgramNumbers fetches every ALN and flattens the results", async () => {

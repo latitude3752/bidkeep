@@ -4,12 +4,18 @@ import { NextRequest } from "next/server";
 const notifyNewGrantAwards = vi.fn(async (_awards: unknown[]) => null as string | null);
 const notifyNewFundingOpportunities = vi.fn(async (_opps: unknown[]) => null as string | null);
 const notifySyncErrors = vi.fn(async (_errors: string[], _source?: string) => {});
+const afterMock = vi.fn();
 
 vi.mock("@/lib/notify", () => ({
   notifyNewGrantAwards,
   notifyNewFundingOpportunities,
   notifySyncErrors,
 }));
+
+vi.mock("next/server", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next/server")>();
+  return { ...actual, after: (...args: unknown[]) => afterMock(...args) };
+});
 
 /** Same fake Supabase builder shape as sync-opportunities/route.test.ts:
  * select(...).in(...) for the existing-check, upsert(...) as the write.
@@ -22,6 +28,7 @@ function makeSupabaseAdminMock(opts: {
   activeAlns?: string[];
   initialExistingAwards?: string[];
   initialExistingFundingOpps?: string[];
+  checkpoint?: Record<string, unknown> | null;
 }) {
   const idColumnByTable: Record<string, string> = {
     grant_awards: "award_id",
@@ -36,7 +43,22 @@ function makeSupabaseAdminMock(opts: {
     grant_funding_opportunities: [],
   };
 
+  let checkpoint: Record<string, unknown> | null = opts.checkpoint ?? null;
+
   const from = vi.fn((table: string) => {
+    if (table === "grant_sync_checkpoints") {
+      return {
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({ data: checkpoint, error: null }),
+          }),
+        }),
+        upsert: async (row: Record<string, unknown>) => {
+          checkpoint = { ...row };
+          return { error: null };
+        },
+      };
+    }
     if (table === "grant_programs") {
       return {
         select: () => ({
@@ -79,6 +101,7 @@ function makeSupabaseAdminMock(opts: {
     from,
     upsertedRows: upsertedRowsByTable.grant_awards,
     upsertedFundingOpportunities: upsertedRowsByTable.grant_funding_opportunities,
+    getCheckpoint: () => checkpoint,
   };
 }
 
@@ -89,7 +112,11 @@ vi.mock("@/lib/supabase/admin", () => ({
 }));
 
 function jsonResponse(body: unknown): Response {
-  return { ok: true, json: async () => body } as Response;
+  return {
+    ok: true,
+    json: async () => body,
+    body: { cancel: async () => {} },
+  } as Response;
 }
 
 function usaspendingAward(overrides: Record<string, unknown>) {
@@ -127,15 +154,18 @@ describe("GET /api/sync-grants", () => {
     notifyNewGrantAwards.mockClear().mockResolvedValue(null);
     notifyNewFundingOpportunities.mockClear().mockResolvedValue(null);
     notifySyncErrors.mockClear();
+    afterMock.mockClear();
+    delete process.env.GRANT_SYNC_BUDGET_MS;
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
     delete process.env.CRON_SECRET;
+    delete process.env.GRANT_SYNC_BUDGET_MS;
   });
 
-  function authedRequest() {
-    return new NextRequest("http://localhost/api/sync-grants", {
+  function authedRequest(path = "http://localhost/api/sync-grants") {
+    return new NextRequest(path, {
       headers: { authorization: "Bearer test-secret" },
     });
   }
@@ -172,6 +202,8 @@ describe("GET /api/sync-grants", () => {
 
     expect(res.status).toBe(200);
     expect(body.errors).toEqual([]);
+    expect(body.complete).toBe(true);
+    expect(body.continued).toBe(false);
     expect(supabaseMock.upsertedRows).toHaveLength(1);
     expect(supabaseMock.upsertedRows[0].program_number).toBe("20.205");
     expect(supabaseMock.upsertedRows[0].recipient_name).toBe(
@@ -318,5 +350,99 @@ describe("GET /api/sync-grants", () => {
       ["digest recipient lookup failed: supabase down"],
       "grants"
     );
+  });
+
+  it("stops on the time budget after funding the first ALN and schedules a continuation", async () => {
+    process.env.GRANT_SYNC_BUDGET_MS = "20";
+    supabaseMock = makeSupabaseAdminMock({ activeAlns: ["81.041", "10.766"] });
+    const fetchMock = vi.fn(async (input: string | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/api/sync-grants")) {
+        return jsonResponse({ ok: true });
+      }
+      if (url.includes("usaspending.gov")) {
+        return jsonResponse({ results: [], page_metadata: { page: 1, hasNext: false } });
+      }
+      const body = JSON.parse(String(init?.body));
+      if (body.cfda === "10.766") {
+        await new Promise((r) => setTimeout(r, 30));
+      }
+      return jsonResponse({ errorcode: 0, data: { hitCount: 0, oppHits: [] } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { GET } = await import("./route");
+    const res = await GET(authedRequest());
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.complete).toBe(false);
+    expect(body.continued).toBe(true);
+    expect(body.nextCursor).toBe("funding:81.041");
+    expect(body.programsChecked).toEqual(["10.766"]);
+    expect(afterMock).toHaveBeenCalledTimes(1);
+    expect(supabaseMock.getCheckpoint()?.pass).toBe("funding");
+    expect(supabaseMock.getCheckpoint()?.aln).toBe("81.041");
+
+    const usaspendingCalls = fetchMock.mock.calls.filter((call) =>
+      String(call[0]).includes("usaspending.gov")
+    );
+    expect(usaspendingCalls).toHaveLength(0);
+  });
+
+  it("resumes from ?cursor= without re-running earlier funding ALNs", async () => {
+    supabaseMock = makeSupabaseAdminMock({ activeAlns: ["81.041", "10.766"] });
+    const fetchMock = vi.fn(async (input: string | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("usaspending.gov")) {
+        return jsonResponse({ results: [], page_metadata: { page: 1, hasNext: false } });
+      }
+      const body = JSON.parse(String(init?.body));
+      return jsonResponse({
+        errorcode: 0,
+        data: body.cfda === "81.041" ? { oppHits: [grantsGovOppHit({ id: "81" })] } : { oppHits: [] },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { GET } = await import("./route");
+    const res = await GET(authedRequest("http://localhost/api/sync-grants?cursor=funding:81.041"));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.complete).toBe(true);
+    const fundingCfdas = fetchMock.mock.calls
+      .filter((call) => String(call[0]).includes("grants.gov"))
+      .map((call) => JSON.parse(String((call[1] as RequestInit).body)).cfda);
+    expect(fundingCfdas).toEqual(["81.041"]);
+    expect(body.fundingOpportunitiesUpserted).toBe(1);
+    expect(supabaseMock.getCheckpoint()?.pass).toBe("done");
+  });
+
+  it("skips a second same-day cron once the sweep is marked done", async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    supabaseMock = makeSupabaseAdminMock({
+      activeAlns: ["20.205"],
+      checkpoint: {
+        id: "daily",
+        day: today,
+        pass: "done",
+        aln: "",
+        award_page: 1,
+        locked_at: null,
+        updated_at: `${today}T14:40:00.000Z`,
+      },
+    });
+    const fetchMock = vi.fn(async () => jsonResponse({}));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { GET } = await import("./route");
+    const res = await GET(authedRequest());
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.skipped).toBe("already-completed-today");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(notifyNewGrantAwards).not.toHaveBeenCalled();
   });
 });
