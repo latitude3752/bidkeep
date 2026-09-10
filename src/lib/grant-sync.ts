@@ -12,10 +12,9 @@
  * a cursor the route persists and/or follows in a continuation request.
  */
 
-export const GRANT_SYNC_MAX_DURATION_SECONDS = 300;
-
-/** Leave headroom inside maxDuration for digest mail + JSON response so
- * the invocation returns 200 instead of being killed mid-upsert. */
+/** Leave headroom inside the route's `maxDuration = 300` for digest mail
+ * + JSON response so the invocation returns 200 instead of being killed
+ * mid-upsert. Next.js requires that segment config to be a literal. */
 export const GRANT_SYNC_DEFAULT_BUDGET_MS = 240_000;
 
 export const GRANT_SYNC_MAX_CONTINUE_CHUNKS = 20;
