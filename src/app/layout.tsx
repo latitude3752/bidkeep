@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 
 const TITLE = "BidKeep | Federal Facilities Opportunity Tracking";
 const DESCRIPTION =
-  "BidKeep tracks SAM.gov solicitations for janitorial, grounds, security guards/patrol, and facilities support — with set-aside type on every row and SCA wage-determination awareness when SAM.gov includes a WD link.";
+  "BidKeep tracks SAM.gov solicitations for janitorial, grounds, security guards/patrol, and facilities support — recompete radar for option and period-end language, set-aside type on every row, and SCA wage-determination links when the notice includes them.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://example.com"),

@@ -1,5 +1,6 @@
 export const SITE_NAV = [
   { href: "/opportunities", label: "Opportunities" },
+  { href: "/radar", label: "Recompete radar" },
   { href: "/grants", label: "Grants" },
   { href: "/set-asides", label: "Set-asides & SCA" },
   { href: "/pricing", label: "Pricing" },

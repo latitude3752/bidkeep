@@ -8,6 +8,8 @@ import {
   getSampleGrantAwards,
   getSampleOpportunities,
 } from "@/lib/public-samples";
+import { getSampleRadarRows } from "@/lib/public-radar";
+import SampleRadarList from "@/components/SampleRadarList";
 
 export const metadata = {
   title: `Dashboard preview | ${OPERATOR.productName}`,
@@ -18,9 +20,10 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function DemoPage() {
-  const [opps, grants] = await Promise.all([
+  const [opps, grants, radar] = await Promise.all([
     getSampleOpportunities(PUBLIC_OPP_SAMPLE_DEFAULT),
     getSampleGrantAwards(8),
+    getSampleRadarRows(3),
   ]);
   const hasExamples = opps.some((op) => op.isExample);
   const allExamples = opps.length > 0 && opps.every((op) => op.isExample);
@@ -55,6 +58,16 @@ export default async function DemoPage() {
               SAM.gov sync.
             </p>
           )}
+        </div>
+      </section>
+      <section className="mx-auto max-w-6xl px-6 pt-16">
+        <h2 className="text-xl font-bold text-navy-950">Recompete radar</h2>
+        <p className="mt-2 text-sm text-ink/60">
+          Option, period-end, and follow-on language from the same SAM.gov
+          notices. Dates only when the notice includes them.
+        </p>
+        <div className="mt-5">
+          <SampleRadarList rows={radar} />
         </div>
       </section>
       <section className="mx-auto max-w-6xl px-6 py-16">

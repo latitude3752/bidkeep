@@ -133,8 +133,13 @@ export default async function OpportunitiesPage() {
           <p className="mx-auto mt-3 max-w-2xl text-cream/70">
             New matching notices sync in automatically. The full list —
             deadlines, set-aside type, program ceiling — lives in the
-            subscriber dashboard. SCA wage-determination links appear on a
-            notice when SAM.gov includes them; we do not invent WD numbers.
+            subscriber dashboard. The{" "}
+            <Link href="/radar" className="underline decoration-gold-400 underline-offset-2 hover:text-gold-400">
+              recompete radar
+            </Link>{" "}
+            lists option and period-end language from those notices. SCA
+            wage-determination links appear when SAM.gov includes them; we
+            do not invent WD numbers.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
