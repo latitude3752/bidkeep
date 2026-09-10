@@ -142,6 +142,12 @@ const SET_ASIDE_BADGE_LABEL: Partial<Record<SetAsideFilter | "other", string>> =
 };
 
 const INACTIVE_STATUSES = ["expired", "lost"];
+/** Statuses that mean "we haven't submitted yet" -- once their deadline
+ * passes, the notice is genuinely closed even if the once-daily sync sweep
+ * (sync-opportunities' `status: "expired"` update) hasn't run since. 'bid'
+ * is deliberately excluded: it's expected to pass its own deadline while
+ * awaiting award, which isn't the same as having missed the window. */
+const PRE_SUBMISSION_STATUSES = ["new", "reviewing"];
 const PAGE_SIZE = 50;
 
 /** Sortable columns, all backed by a real DB column, keyed by the URL-safe
@@ -291,7 +297,12 @@ async function getOpportunities(
       query = query.eq("acquisition_type", filters.type);
     }
     if (filters.activeOnly) {
-      query = query.not("status", "in", `(${INACTIVE_STATUSES.join(",")})`);
+      const nowIso = new Date().toISOString();
+      query = query
+        .not("status", "in", `(${INACTIVE_STATUSES.join(",")})`)
+        .or(
+          `status.not.in.(${PRE_SUBMISSION_STATUSES.join(",")}),response_deadline.gte.${nowIso},response_deadline.is.null`
+        );
     }
     if (filters.program === "big") {
       query = query.not("program_type", "is", null);

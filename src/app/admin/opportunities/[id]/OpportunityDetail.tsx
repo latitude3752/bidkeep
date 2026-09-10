@@ -5,7 +5,7 @@ import type { PriceResearchResult } from "@/lib/contract-awards";
 import StatusSelect from "../StatusSelect";
 import ResearchButton from "./ResearchButton";
 import ScaleButton from "./ScaleButton";
-import { ensureOpportunityScale } from "@netacracy/bid-core";
+import { ensureOpportunityScale, extractSubmissionMethod } from "@netacracy/bid-core";
 import { getCurrentSeat } from "@/lib/current-seat";
 import { getCompanyProfile } from "@/lib/company-profiles";
 import { getQuoteWorksheet } from "@/lib/quote-worksheets-store";
@@ -75,6 +75,7 @@ export async function OpportunityDetail({
   }
 
   const research = op.price_research;
+  const submission = extractSubmissionMethod(op.requirements_text);
 
   const isSubscriberView = basePath === "/app/opportunities";
   const seat = isSubscriberView ? await getCurrentSeat() : null;
@@ -147,14 +148,24 @@ export async function OpportunityDetail({
             View full solicitation on SAM.gov ↗
           </a>
         )}
-        <a
-          href="https://piee.eb.mil"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block text-sm underline decoration-gold-500 decoration-2 underline-offset-2 hover:text-gold-600"
-        >
-          Submit via PIEE ↗
-        </a>
+        {submission?.method === "email" ? (
+          <a
+            href={`mailto:${submission.email}`}
+            className="inline-block text-sm underline decoration-gold-500 decoration-2 underline-offset-2 hover:text-gold-600"
+            title="This notice's own text asks for the response by email, not through PIEE"
+          >
+            Email your quote to {submission.email} ↗
+          </a>
+        ) : (
+          <a
+            href="https://piee.eb.mil"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block text-sm underline decoration-gold-500 decoration-2 underline-offset-2 hover:text-gold-600"
+          >
+            Submit via PIEE ↗
+          </a>
+        )}
       </div>
 
       <div className="mt-10 rounded-xl border border-navy-950/10 bg-white p-6">
