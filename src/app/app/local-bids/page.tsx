@@ -16,6 +16,16 @@ type GprRow = {
   detail_url: string;
 };
 
+type TxRow = {
+  id: string;
+  title: string;
+  agency_name: string | null;
+  status_name: string | null;
+  response_due: string | null;
+  response_time: string | null;
+  detail_url: string;
+};
+
 type BonfireRow = {
   id: string;
   title: string;
@@ -63,6 +73,16 @@ async function getOpenGprOpportunities(): Promise<GprRow[]> {
   return (data ?? []) as GprRow[];
 }
 
+async function getOpenTxEsbdOpportunities(): Promise<TxRow[]> {
+  const admin = getSupabaseAdmin();
+  const { data } = await admin
+    .from("tx_esbd_opportunities")
+    .select("id, title, agency_name, status_name, response_due, response_time, detail_url")
+    .order("response_due", { ascending: true })
+    .limit(200);
+  return (data ?? []) as TxRow[];
+}
+
 async function getOpenBonfireOpportunities(): Promise<BonfireRow[]> {
   const admin = getSupabaseAdmin();
   const { data } = await admin
@@ -75,8 +95,9 @@ async function getOpenBonfireOpportunities(): Promise<BonfireRow[]> {
 }
 
 export default async function LocalBidsPage() {
-  const [gprRows, bonfireRows] = await Promise.all([
+  const [gprRows, txRows, bonfireRows] = await Promise.all([
     getOpenGprOpportunities(),
+    getOpenTxEsbdOpportunities(),
     getOpenBonfireOpportunities(),
   ]);
 
@@ -86,8 +107,8 @@ export default async function LocalBidsPage() {
         <div>
           <h1 className="text-2xl font-bold text-navy-950">State & local bids</h1>
           <p className="mt-1 text-sm text-ink/60">
-            Georgia state, county, city, and school-board facilities solicitations —
-            plus a broader, thinner net across other states.
+            Georgia and Texas state, county, city, and school-board facilities
+            solicitations — plus a broader, thinner net across other states.
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -149,6 +170,61 @@ export default async function LocalBidsPage() {
                 </tr>
               ))}
               {gprRows.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="p-6 text-center text-ink/50">
+                    No open listings synced yet — check back after the next sync.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="mt-10">
+        <h2 className="text-lg font-semibold text-navy-950">
+          Texas — {txRows.length} open listing{txRows.length === 1 ? "" : "s"}
+        </h2>
+        <div className="mt-2 rounded-lg border border-navy-950/10 bg-navy-950/[0.03] p-4 text-sm text-ink/70">
+          Sourced directly from the Texas Electronic State Business Daily (ESBD) —
+          the state&apos;s own public bid-advertising system, no sign-in required,
+          covering state agencies, higher ed, and local governments (cities, counties,
+          school districts). Filtered to facilities-trade keywords.
+        </div>
+        <div className="mt-4 overflow-x-auto rounded-xl border border-navy-950/10 bg-white">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-navy-950/10 text-left text-xs uppercase tracking-wide text-ink/40">
+                <th className="p-3">Title</th>
+                <th className="p-3">Agency</th>
+                <th className="p-3">Status</th>
+                <th className="p-3">Due</th>
+                <th className="p-3" />
+              </tr>
+            </thead>
+            <tbody>
+              {txRows.map((row) => (
+                <tr key={row.id} className="border-b border-navy-950/10 last:border-0">
+                  <td className="p-3 font-medium text-navy-950">{row.title}</td>
+                  <td className="p-3 text-ink/70">{row.agency_name ?? "—"}</td>
+                  <td className="p-3 text-ink/70">{row.status_name ?? "—"}</td>
+                  <td className="p-3 text-ink/70">
+                    {row.response_due ?? "—"}
+                    {row.response_time ? ` @ ${row.response_time}` : ""}
+                  </td>
+                  <td className="p-3 text-right">
+                    <a
+                      href={row.detail_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-gold-600 underline hover:text-gold-500"
+                    >
+                      View on ESBD ↗
+                    </a>
+                  </td>
+                </tr>
+              ))}
+              {txRows.length === 0 && (
                 <tr>
                   <td colSpan={5} className="p-6 text-center text-ink/50">
                     No open listings synced yet — check back after the next sync.

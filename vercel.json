@@ -14,6 +14,10 @@
       "schedule": "15 15 * * *"
     },
     {
+      "path": "/api/sync-tx-esbd",
+      "schedule": "45 15 * * *"
+    },
+    {
       "path": "/api/check-sync-freshness",
       "schedule": "0 21 * * *"
     }
