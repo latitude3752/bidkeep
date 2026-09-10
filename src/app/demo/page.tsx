@@ -11,6 +11,8 @@ import {
 
 export const metadata = {
   title: `Dashboard preview | ${OPERATOR.productName}`,
+  description:
+    "See a live preview of the BidKeep dashboard — sample federal contract and grant listings for facilities and building services.",
   alternates: { canonical: "/demo" },
 };
 export const dynamic = "force-dynamic";

@@ -4,6 +4,8 @@ import { OPERATOR } from "@/lib/operator";
 
 export const metadata = {
   title: `Pricing | ${OPERATOR.productName}`,
+  description:
+    "BidKeep is $100/month for up to 5 seats — full access to daily SAM.gov contract and grant tracking for federal facilities and building services.",
   alternates: { canonical: "/pricing" },
 };
 

@@ -4,6 +4,8 @@ import { OPERATOR } from "@/lib/operator";
 
 export const metadata = {
   title: `Set-asides & SCA | ${OPERATOR.productName}`,
+  description:
+    "SDVOSB, 8(a), HUBZone, WOSB, and small-business set-aside types explained for federal facilities contracts, plus Service Contract Act wage-determination awareness.",
   alternates: { canonical: "/set-asides" },
 };
 

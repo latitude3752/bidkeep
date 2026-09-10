@@ -4,6 +4,8 @@ import CommercialLinks from "@/components/CommercialLinks";
 
 export const metadata = {
   title: "Start for $100/mo | BidKeep",
+  description:
+    "Start your BidKeep subscription — $100/month for up to 5 seats, full access to the daily SAM.gov opportunity and grant pipeline for facilities and building services.",
   alternates: { canonical: "/start" },
 };
 

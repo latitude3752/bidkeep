@@ -7,6 +7,8 @@ import { formatMoney0 } from "@/lib/public-display";
 
 export const metadata = {
   title: "Grant Awards | BidKeep",
+  description:
+    "Federal grant awards for public-housing capital, community-facilities, and energy-efficiency programs — early signal for upcoming janitorial and base-ops work.",
   alternates: { canonical: "/grants" },
 };
 // Tracked programs (and the live award list below) change constantly; render

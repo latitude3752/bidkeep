@@ -9,6 +9,8 @@ import {
 
 export const metadata = {
   title: "Opportunities | BidKeep",
+  description:
+    "Live SAM.gov solicitations for janitorial, grounds, security guards/patrol, and facilities support — set-aside type shown on every row, synced daily.",
   alternates: { canonical: "/opportunities" },
 };
 // Tracked NAICS codes (and the live sample below) change constantly; render
