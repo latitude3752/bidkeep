@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import { OPERATOR } from "@/lib/operator";
@@ -72,6 +74,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <NavBar />
         <main className="flex-1">{children}</main>
         <Footer />
+        <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
