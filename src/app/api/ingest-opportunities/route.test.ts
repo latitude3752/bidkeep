@@ -64,7 +64,10 @@ function makeSupabaseAdminMock(initialExisting: string[] = []) {
       },
       in(_col, vals) {
         if (builder._isUpdate) return builder;
-        if (builder._cols?.includes("notice_id") && !builder._cols.includes("id")) {
+        if (
+          builder._cols === "notice_id" ||
+          builder._cols?.startsWith("notice_id,")
+        ) {
           return Promise.resolve({
             data: vals
               .filter((v) => existing.has(v))
