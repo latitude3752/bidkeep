@@ -76,6 +76,52 @@ function toGrantAward(row: UsaSpendingResultRow): GrantAward | null {
   };
 }
 
+/** One USAspending spending_by_award page for a program number. The cron
+ * upserts page-by-page so a time-budget stop can resume mid-ALN instead of
+ * re-pulling every earlier page after a 504. */
+export async function searchAwardPageByProgramNumber(
+  aln: string,
+  page: number
+): Promise<{ awards: GrantAward[]; hasNext: boolean }> {
+  const res = await fetch(USASPENDING_SEARCH_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      filters: {
+        program_numbers: [aln],
+        award_type_codes: GRANT_AWARD_TYPE_CODES,
+      },
+      fields: [
+        "Award ID",
+        "Recipient Name",
+        "Awarding Agency",
+        "Award Amount",
+        "Start Date",
+        "Description",
+        "Recipient Location",
+      ],
+      limit: PAGE_SIZE,
+      page,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`USAspending API error ${res.status}: ${body}`);
+  }
+
+  const data = (await res.json()) as UsaSpendingSearchResponse;
+  const rows = data.results ?? [];
+  const awards: GrantAward[] = [];
+  for (const row of rows) {
+    const award = toGrantAward(row);
+    if (award) awards.push(award);
+  }
+
+  const hasNext = Boolean(data.page_metadata?.hasNext) && rows.length > 0 && page < MAX_PAGES;
+  return { awards, hasNext };
+}
+
 /** Fetches every grant award USAspending has recorded under a given
  * Assistance Listing (CFDA) number -- e.g. every state DOT that has
  * received Highway Planning and Construction funding to date. */
@@ -83,41 +129,9 @@ export async function searchAwardsByProgramNumber(aln: string): Promise<GrantAwa
   const collected: GrantAward[] = [];
 
   for (let page = 1; page <= MAX_PAGES; page++) {
-    const res = await fetch(USASPENDING_SEARCH_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        filters: {
-          program_numbers: [aln],
-          award_type_codes: GRANT_AWARD_TYPE_CODES,
-        },
-        fields: [
-          "Award ID",
-          "Recipient Name",
-          "Awarding Agency",
-          "Award Amount",
-          "Start Date",
-          "Description",
-          "Recipient Location",
-        ],
-        limit: PAGE_SIZE,
-        page,
-      }),
-    });
-
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`USAspending API error ${res.status}: ${body}`);
-    }
-
-    const data = (await res.json()) as UsaSpendingSearchResponse;
-    const rows = data.results ?? [];
-    for (const row of rows) {
-      const award = toGrantAward(row);
-      if (award) collected.push(award);
-    }
-
-    if (!data.page_metadata?.hasNext || rows.length === 0) break;
+    const { awards, hasNext } = await searchAwardPageByProgramNumber(aln, page);
+    collected.push(...awards);
+    if (!hasNext) break;
   }
 
   return collected;

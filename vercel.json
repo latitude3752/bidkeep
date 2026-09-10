@@ -6,6 +6,10 @@
       "schedule": "30 14 * * *"
     },
     {
+      "path": "/api/sync-grants",
+      "schedule": "50 14 * * *"
+    },
+    {
       "path": "/api/sync-bonfire",
       "schedule": "0 15 * * *"
     },
