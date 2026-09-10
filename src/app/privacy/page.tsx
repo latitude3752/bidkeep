@@ -58,13 +58,16 @@ export default function PrivacyPage() {
         </div>
         <div>
           <h2 className="text-base font-semibold text-navy-950">
-            What we don&apos;t do
+            Analytics
           </h2>
           <p className="mt-2">
-            We don&apos;t run analytics or advertising trackers on this site,
-            don&apos;t sell or share your information with third parties for
-            marketing, and don&apos;t use your data for anything beyond
-            running the product and responding to you.
+            We use Vercel Web Analytics and Speed Insights to see aggregate
+            traffic and page-performance data. Both are cookieless and
+            don&apos;t track you individually or across other sites. We run
+            no advertising trackers, don&apos;t sell or share your
+            information with third parties for marketing, and don&apos;t use
+            your data for anything beyond running the product and responding
+            to you.
           </p>
         </div>
         <div>
@@ -73,8 +76,9 @@ export default function PrivacyPage() {
           </h2>
           <p className="mt-2">
             Supabase (database hosting), an SMTP provider (login and digest
-            email), Vercel (hosting), and Stripe (payment). Each processes
-            only what&apos;s necessary to provide their part of the service.
+            email), Vercel (hosting and analytics), and Stripe (payment).
+            Each processes only what&apos;s necessary to provide their part
+            of the service.
           </p>
         </div>
         <div>
