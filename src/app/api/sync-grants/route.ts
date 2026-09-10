@@ -12,7 +12,6 @@ import {
 } from "@/lib/notify";
 import {
   GRANT_SYNC_MAX_CONTINUE_CHUNKS,
-  GRANT_SYNC_MAX_DURATION_SECONDS,
   grantSyncBudgetMs,
   parseGrantSyncChunk,
   parseGrantSyncCursor,
@@ -36,7 +35,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 const ACTIONABLE_FUNDING_STATUSES = new Set(["posted", "forecasted"]);
 
 export const dynamic = "force-dynamic";
-export const maxDuration = GRANT_SYNC_MAX_DURATION_SECONDS;
+/** Must be a literal — Next.js rejects an imported segment config. Pro /
+ * Fluid allows 300; the work budget in grant-sync.ts stops earlier so we
+ * return 200 and continue instead of hitting this ceiling. */
+export const maxDuration = 300;
 
 /** Registered grant programs to track, admin-managed the same way
  * naics_codes is for SAM.gov contracts. */
