@@ -190,7 +190,12 @@ const SET_ASIDE_FILTER_VALUES: SetAsideFilter[] = [
 ];
 
 function parseFilters(sp: Record<string, string | undefined>): Filters {
-  const type = sp.type === "service" || sp.type === "all" ? sp.type : "material";
+  // Facilities-services demand (janitorial, grounds, security, maintenance)
+  // is overwhelmingly a "service" acquisition type, not "material" -- the
+  // default used to be "material", which silently hid the vast majority of
+  // relevant listings behind an extra click (2 shown vs. 172 once switched
+  // to Service in a live audit).
+  const type = sp.type === "material" || sp.type === "all" ? sp.type : "service";
   const program = sp.program === "big" || sp.program === "single" ? sp.program : "all";
   const setAside = SET_ASIDE_FILTER_VALUES.includes(sp.setAside as SetAsideFilter)
     ? (sp.setAside as SetAsideFilter)
@@ -534,7 +539,7 @@ export default async function OpportunityPipeline({
       <SavedGeo currentState={filters.myZip} storageKey="bidkeep-my-zip" paramName="myZip" />
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-navy-950">Construction opportunities pipeline</h1>
+          <h1 className="text-2xl font-bold text-navy-950">Facilities opportunities pipeline</h1>
           <p className="mt-1 text-sm text-ink/60">
             {horizonLabel ? `Due through ${horizonLabel}` : "All response dates"}
             {spanLabel ? ` · In this list ${spanLabel}` : ""}
