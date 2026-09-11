@@ -595,6 +595,12 @@ export default async function OpportunityPipeline({
             </Link>
           )}
           <Link
+            href={viewer === "founder" ? "/admin/radar" : "/app/radar"}
+            className="text-sm font-medium text-ink/50 underline hover:text-ink"
+          >
+            Radar
+          </Link>
+          <Link
             href={grantsHref}
             className="text-sm font-medium text-ink/50 underline hover:text-ink"
           >

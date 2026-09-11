@@ -34,6 +34,7 @@ export default function Footer() {
         <div>
           <p className="font-semibold text-cream">Coverage</p>
           <p className="mt-2">SAM.gov solicitations, updated daily.</p>
+          <p>Recompete / option / expiration radar from notice language.</p>
           <p>Grant awards from USAspending.gov &amp; Grants.gov.</p>
         </div>
         <div>

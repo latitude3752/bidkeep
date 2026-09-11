@@ -14,20 +14,25 @@ facilities support / base ops. Tracks two complementary signals:
   awards (from USAspending.gov + Grants.gov) can precede janitorial or
   base-ops work. Not a highway/civil construction grant list.
 
-Surfaced through public preview pages (`/opportunities`, `/grants`,
-`/set-asides`) plus a subscriber pipeline (`/admin/opportunities`,
-`/app`).
+Surfaced through public preview pages (`/opportunities`, `/radar`,
+`/grants`, `/set-asides`) plus a subscriber pipeline
+(`/admin/opportunities`, `/app`, `/app/radar`).
 
 Forked from the BidYard / BidPulse Bid* app pattern, sharing
 `@netacracy/bid-core`. There is no drone / Blue UAS content. The
 facilities trust page is **Set-asides & SCA** (`/set-asides`): we surface
-SAM.gov set-aside fields today and show honest placeholders for Service
-Contract Act wage-determination links until SAM.gov includes them.
+SAM.gov set-aside fields and any WD number / link the notice actually
+includes. Mentions without a number stay empty — we do not invent DOL
+rates. The **recompete radar** (`/radar`, `/app/radar`) classifies
+option-year, period-of-performance, and follow-on language from title,
+notice type, `raw_data`, and `requirements_text`, and persists those
+columns so the list can query without reparsing.
 
 ## Status
 
 MVP: SAM.gov contracts + a tuned grants feed, facilities NAICS seed,
-set-aside badges on public samples, deadline-first pipeline with live +
+set-aside badges on public samples, recompete radar (option / expiration /
+follow-on signals from notice language), deadline-first pipeline with live +
 `isExample` fallback and agency/NAICS diversity. Billing is env-driven
 Stripe Payment Link — no live Payment Link is checked in.
 
@@ -113,8 +118,8 @@ See `.env.example`. Required for a working deploy:
 ## Testing
 
 `npm test` (Vitest) covers SAM.gov / USAspending / Grants.gov query
-building, public-sample diversity, set-aside labels, and mocked sync
-routes.
+building, public-sample diversity, set-aside labels, recompete / option /
+expiration classification, SCA WD extraction, and mocked sync routes.
 
 `npm run build` should pass without a live Supabase project (public pages
 catch empty data).

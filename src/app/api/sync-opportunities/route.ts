@@ -11,6 +11,7 @@ import {
 } from "@netacracy/bid-core";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { ACTIONABLE_NOTICE_TYPES, classifyAcquisitionType } from "@/lib/opportunities";
+import { radarPersistFields } from "@/lib/radar";
 import { notifyNewOpportunities, notifySyncErrors, type NotifiableOpportunity } from "@/lib/notify";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -46,9 +47,12 @@ async function upsertResults(
   const noticeIds = results.map((op) => op.noticeId);
   const { data: existing } = await supabase
     .from("opportunities")
-    .select("notice_id")
+    .select("notice_id, requirements_text")
     .in("notice_id", noticeIds);
   const existingIds = new Set((existing ?? []).map((r) => r.notice_id));
+  const requirementsByNoticeId = new Map(
+    (existing ?? []).map((r) => [r.notice_id as string, (r.requirements_text as string | null) ?? null])
+  );
 
   const rows = results.map((op) => ({
     notice_id: op.noticeId,
@@ -65,6 +69,12 @@ async function upsertResults(
     place_of_performance_zip: op.placeOfPerformance?.zip ?? null,
     raw_data: op,
     updated_at: new Date().toISOString(),
+    ...radarPersistFields({
+      title: op.title,
+      noticeType: op.type,
+      rawData: op,
+      requirementsText: requirementsByNoticeId.get(op.noticeId) ?? null,
+    }),
   }));
 
   const { error } = await supabase
@@ -146,9 +156,16 @@ export async function GET(request: NextRequest) {
       const oppId = idByNoticeId.get(op.noticeId);
       if (!oppId) continue;
       try {
-        const { scale } = await ensureOpportunityScale(oppId);
+        const { scale, text } = await ensureOpportunityScale(oppId);
         const target = byNoticeId.get(op.noticeId);
         if (!target) continue;
+
+        if (text) {
+          await supabase
+            .from("opportunities")
+            .update(radarPersistFields({ title: op.title, requirementsText: text }))
+            .eq("id", oppId);
+        }
 
         if (scale.programType || scale.estimatedCeiling !== null) {
           const kind = scale.programType?.toUpperCase() ?? null;

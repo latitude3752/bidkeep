@@ -51,6 +51,7 @@ function makeSupabaseAdminMock(initialExisting: string[] = []) {
       update: (patch: unknown, opts?: unknown) => typeof builder;
       in: (col: string, vals: string[]) => typeof builder | Promise<unknown>;
       lt: (col: string, val: string) => Promise<{ count: number; error: null }>;
+      eq: (col: string, val: string) => Promise<{ error: null }>;
     } = {
       _cols: null,
       _isUpdate: false,
@@ -69,14 +70,22 @@ function makeSupabaseAdminMock(initialExisting: string[] = []) {
       },
       in(_col, vals) {
         if (builder._isUpdate) return builder;
-        if (builder._cols === "notice_id") {
+        if (
+          builder._cols === "notice_id" ||
+          builder._cols?.startsWith("notice_id,")
+        ) {
           return Promise.resolve({
-            data: vals.filter((v) => existing.has(v)).map((id) => ({ notice_id: id })),
+            data: vals
+              .filter((v) => existing.has(v))
+              .map((id) => ({ notice_id: id, requirements_text: null })),
           });
         }
         return Promise.resolve({
           data: vals.map((id) => ({ id: `row-${id}`, notice_id: id })),
         });
+      },
+      async eq() {
+        return { error: null };
       },
       async lt() {
         return { count: 0, error: null };
@@ -174,6 +183,7 @@ describe("GET /api/sync-opportunities", () => {
     expect(supabaseMock.upsertedRows.map((r) => r.notice_id)).toEqual(["n1"]);
     expect(supabaseMock.upsertedRows[0].place_of_performance_state).toBe("TX");
     expect(supabaseMock.upsertedRows[0].place_of_performance_zip).toBe("76544");
+    expect(supabaseMock.upsertedRows[0].radar_classified_at).toEqual(expect.any(String));
 
     expect(notifyNewOpportunities).toHaveBeenCalledTimes(1);
     const notified = notifyNewOpportunities.mock.calls[0][0];

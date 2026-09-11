@@ -39,7 +39,8 @@ export default async function StartPage({
       </h1>
       <p className="mt-6 text-lg leading-relaxed text-ink/75">
         The SAM.gov dashboard for janitorial, grounds, security, and
-        facilities-support notices — set-aside type on every row — plus an
+        facilities-support notices — set-aside type on every row, plus a
+        recompete radar for option and period-end language — and an
         email digest. A smaller grant feed covers housing and community-
         facilities awards that often precede that work. Up to 5 seats per
         company. Cancel anytime. Access the same business day after payment.

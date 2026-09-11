@@ -36,6 +36,7 @@ export default function PricingPage() {
         </p>
         <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-ink/75">
           <li>SAM.gov opportunity dashboard matched to this vertical, updated daily.</li>
+          <li>Recompete radar: option / period-end / follow-on signals from notice language.</li>
           <li>Set-aside type (SDVOSB / 8(a) / HUBZone / WOSB / SB) on every row.</li>
           <li>Grant-award leads from USAspending.gov and Grants.gov (secondary signal).</li>
           <li>Email digest of matching notices.</li>

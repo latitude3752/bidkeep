@@ -1,6 +1,8 @@
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import { OPERATOR } from "@/lib/operator";
+import { getRadarStats, getSampleScaRows } from "@/lib/public-radar";
+import { samNoticeHref } from "@/lib/public-display";
 
 export const metadata = {
   title: `Set-asides & SCA | ${OPERATOR.productName}`,
@@ -32,7 +34,11 @@ const SET_ASIDES = [
   },
 ];
 
-export default function SetAsidesPage() {
+export const dynamic = "force-dynamic";
+
+export default async function SetAsidesPage() {
+  const [scaRows, stats] = await Promise.all([getSampleScaRows(), getRadarStats()]);
+
   return (
     <>
       <PageHeader
@@ -82,10 +88,12 @@ export default function SetAsidesPage() {
             on a base-plus-option vehicle.
           </p>
           <p className="mt-4 max-w-3xl text-sm leading-relaxed text-ink/70">
-            BidKeep does not fabricate WD numbers or scrape DOL on its own
-            yet. When SAM.gov includes a wage-determination identifier or
-            attachment link on a notice, sync will show that link on the
-            opportunity. Until then, use{" "}
+            BidKeep does not fabricate WD numbers or scrape DOL on its own.
+            Sync reads the notice title, description, and attachment links.
+            A WD number or SAM.gov wage-determination URL is stored when it
+            is actually there. “Wage determination has been updated” without
+            a number stays an honest mention — not a guessed WD-2015-XXXX.
+            Use{" "}
             <a
               href="https://sam.gov/wage-determination"
               target="_blank"
@@ -94,27 +102,78 @@ export default function SetAsidesPage() {
             >
               SAM.gov wage determinations
             </a>{" "}
-            and the solicitation attachments.
+            and the solicitation attachments when the notice is silent.
           </p>
-          <p className="mt-4 max-w-3xl text-sm leading-relaxed text-ink/70">
+          {stats.scaMentionCount > 0 ? (
+            <p className="mt-4 text-sm text-ink/70">
+              {stats.scaMentionCount.toLocaleString()} open notices mention SCA
+              or a wage determination
+              {stats.scaWdCount > 0
+                ? ` · ${stats.scaWdCount.toLocaleString()} include a WD number`
+                : " · none of those include a WD number yet"}
+              .
+            </p>
+          ) : (
+            <p className="mt-4 text-sm text-ink/60">
+              No open BidKeep notices currently include SCA or WD language in
+              the stored title or description. That empty state is intentional.
+            </p>
+          )}
+          {scaRows.length > 0 && (
+            <ul className="mt-6 space-y-3">
+              {scaRows.map((row) => {
+                const href = samNoticeHref(row.noticeUrl, row.noticeId);
+                return (
+                  <li
+                    key={row.noticeId ?? row.title}
+                    className="rounded-xl border border-navy-950/10 bg-cream px-4 py-3 text-sm"
+                  >
+                    {href ? (
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-gold-700 underline decoration-gold-500 decoration-2 underline-offset-2 hover:text-gold-600"
+                      >
+                        {row.title}
+                      </a>
+                    ) : (
+                      <span className="font-medium text-navy-950">{row.title}</span>
+                    )}
+                    <p className="mt-1 text-xs text-ink/60">
+                      {row.wdNumber
+                        ? `WD ${row.wdNumber}`
+                        : "Mentions a wage determination — number not in the notice text"}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <p className="mt-6 max-w-3xl text-sm leading-relaxed text-ink/70">
             Recompetes of multi-year facilities vehicles are the other clock
-            that matters. BidKeep already sorts live notices by response
-            deadline. Watching incumbent period-of-performance end dates as a
-            first-class field is on the roadmap — we will not show fake
-            expiration dates in the meantime.
+            that matters. The{" "}
+            <Link
+              href="/radar"
+              className="font-medium text-gold-700 underline decoration-gold-500 decoration-2 underline-offset-2 hover:text-gold-600"
+            >
+              recompete radar
+            </Link>{" "}
+            lists option-year, period-end, and follow-on language from the
+            same notices — dates only when SAM.gov included them.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Link
-              href="/opportunities"
+              href="/radar"
               className="inline-block rounded-full bg-gold-500 px-7 py-3 text-sm font-semibold text-navy-950 transition-colors hover:bg-gold-400"
             >
-              See live set-asides
+              Recompete radar
             </Link>
             <Link
-              href="/demo"
+              href="/opportunities"
               className="inline-block rounded-full border border-navy-950/20 px-7 py-3 text-sm font-semibold text-navy-950 hover:border-gold-500"
             >
-              Dashboard preview
+              See live set-asides
             </Link>
           </div>
         </div>

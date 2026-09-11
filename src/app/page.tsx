@@ -20,12 +20,12 @@ const coverage = [
   {
     title: "Recompete and expiration watching",
     description:
-      "Facilities work is multi-year base-plus-option. BidKeep already sorts the pipeline by response deadline so a recompete does not quietly expire. Option-year / incumbent-expiration tracking is a product promise as more SAM.gov period-of-performance fields are wired in.",
+      "Facilities work is multi-year base-plus-option. The recompete radar classifies option-year, period-of-performance, and follow-on language from the SAM.gov notice and lists those clocks — dates only when the notice itself includes them.",
   },
   {
     title: "SCA wage-determination awareness",
     description:
-      "Service Contract Act WDs drive labor cost on janitorial, grounds, and guard contracts. When a SAM.gov notice includes a wage-determination link, sync will surface it. Until that field is populated we do not invent WD numbers — the set-asides page explains the SCA rule and points to DOL.",
+      "Service Contract Act WDs drive labor cost on janitorial, grounds, and guard contracts. When a notice includes a WD number or link, BidKeep surfaces it. Mentions without a number stay an honest empty — we do not invent DOL rates.",
   },
   {
     title: "Filter to where you work",
@@ -54,14 +54,20 @@ export default function Home() {
           </p>
           <div className="mt-10 flex flex-wrap gap-4">
             <Link
-              href="/opportunities"
+              href="/radar"
               className="rounded-full bg-gold-500 px-7 py-3 text-sm font-semibold text-navy-950 transition-colors hover:bg-gold-400"
+            >
+              Recompete radar
+            </Link>
+            <Link
+              href="/opportunities"
+              className="rounded-full border border-cream/30 px-7 py-3 text-sm font-semibold text-cream hover:border-gold-400 hover:text-gold-400"
             >
               See what&apos;s tracked
             </Link>
             <Link
               href="/demo"
-              className="rounded-full border border-cream/30 px-7 py-3 text-sm font-semibold text-cream hover:border-gold-400 hover:text-gold-400"
+              className="rounded-full px-7 py-3 text-sm font-semibold text-cream/80 hover:text-gold-400"
             >
               Dashboard preview
             </Link>

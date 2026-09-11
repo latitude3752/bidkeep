@@ -45,6 +45,7 @@ function makeSupabaseAdminMock(initialExisting: string[] = []) {
       update: (patch: unknown, opts?: unknown) => typeof builder;
       in: (col: string, vals: string[]) => typeof builder | Promise<unknown>;
       lt: (col: string, val: string) => Promise<{ count: number; error: null }>;
+      eq: (col: string, val: string) => Promise<{ error: null }>;
     } = {
       _cols: null,
       _isUpdate: false,
@@ -63,14 +64,22 @@ function makeSupabaseAdminMock(initialExisting: string[] = []) {
       },
       in(_col, vals) {
         if (builder._isUpdate) return builder;
-        if (builder._cols === "notice_id") {
+        if (
+          builder._cols === "notice_id" ||
+          builder._cols?.startsWith("notice_id,")
+        ) {
           return Promise.resolve({
-            data: vals.filter((v) => existing.has(v)).map((id) => ({ notice_id: id })),
+            data: vals
+              .filter((v) => existing.has(v))
+              .map((id) => ({ notice_id: id, requirements_text: null })),
           });
         }
         return Promise.resolve({
           data: vals.map((id) => ({ id: `row-${id}`, notice_id: id })),
         });
+      },
+      async eq() {
+        return { error: null };
       },
       async lt() {
         return { count: 0, error: null };
@@ -147,9 +156,33 @@ describe("POST /api/ingest-opportunities", () => {
     expect(body.errors).toEqual([]);
     expect(supabaseMock.upsertedRows.map((r) => r.notice_id)).toEqual(["n1"]);
     expect(supabaseMock.upsertedRows[0].place_of_performance_state).toBe("TX");
+    expect(supabaseMock.upsertedRows[0].radar_kind).toBeNull();
+    expect(supabaseMock.upsertedRows[0].radar_classified_at).toEqual(expect.any(String));
     expect(notifyNewOpportunities).toHaveBeenCalledTimes(1);
     expect(body.notified).toBe(1);
     expect(body.upserted).toBe(1);
+  });
+
+  it("persists a recompete radar signal from the notice title", async () => {
+    const { POST } = await import("./route");
+    await POST(
+      req({
+        items: [
+          {
+            naicsCode: "561720",
+            results: [
+              samOpportunity({
+                noticeId: "recomp-1",
+                title: "Installation janitorial recompete",
+                type: "Sources Sought",
+              }),
+            ],
+          },
+        ],
+      })
+    );
+    expect(supabaseMock.upsertedRows[0].radar_kind).toBe("recompete");
+    expect(supabaseMock.upsertedRows[0].radar_source).toBe("title");
   });
 
   it("dedupes a notice appearing in more than one relayed NAICS batch", async () => {

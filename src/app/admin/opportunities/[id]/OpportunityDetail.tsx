@@ -6,6 +6,7 @@ import StatusSelect from "../StatusSelect";
 import ResearchButton from "./ResearchButton";
 import ScaleButton from "./ScaleButton";
 import { ensureOpportunityScale, extractSubmissionMethod } from "@netacracy/bid-core";
+import { radarPersistFields, RADAR_KIND_LABELS, isRadarKind, type RadarKind } from "@/lib/radar";
 import { getCurrentSeat } from "@/lib/current-seat";
 import { getCompanyProfile } from "@/lib/company-profiles";
 import { getQuoteWorksheet } from "@/lib/quote-worksheets-store";
@@ -31,6 +32,15 @@ type Row = {
   program_type: "bpa" | "idiq" | null;
   estimated_ceiling: number | null;
   raw_data: { solicitationNumber?: string | null } | null;
+  radar_kind: RadarKind | null;
+  radar_event_date: string | null;
+  radar_evidence: string | null;
+  radar_source: string | null;
+  radar_option_years: number | null;
+  sca_mentioned: boolean;
+  sca_wd_number: string | null;
+  sca_wd_url: string | null;
+  radar_classified_at: string | null;
 };
 
 export async function getOpportunity(id: string): Promise<Row | null> {
@@ -38,7 +48,7 @@ export async function getOpportunity(id: string): Promise<Row | null> {
   const { data, error } = await admin
     .from("opportunities")
     .select(
-      "id, title, agency, naics_code, psc_code, set_aside_type, response_deadline, notice_url, notice_type, acquisition_type, status, price_research, price_research_at, requirements_text, requirements_fetched_at, program_type, estimated_ceiling, raw_data"
+      "id, title, agency, naics_code, psc_code, set_aside_type, response_deadline, notice_url, notice_type, acquisition_type, status, price_research, price_research_at, requirements_text, requirements_fetched_at, program_type, estimated_ceiling, raw_data, radar_kind, radar_event_date, radar_evidence, radar_source, radar_option_years, sca_mentioned, sca_wd_number, sca_wd_url, radar_classified_at"
     )
     .eq("id", id)
     .maybeSingle();
@@ -72,6 +82,21 @@ export async function OpportunityDetail({
     };
   } catch {
     // Page still renders; user can hit "Refresh scale classification".
+  }
+
+  const radarFields = radarPersistFields({
+    title: op.title,
+    noticeType: op.notice_type,
+    rawData: op.raw_data,
+    requirementsText: op.requirements_text,
+  });
+  if (!op.radar_classified_at || (op.requirements_text && op.radar_source !== "requirements_text")) {
+    try {
+      await getSupabaseAdmin().from("opportunities").update(radarFields).eq("id", id);
+      op = { ...op, ...radarFields };
+    } catch {
+      op = { ...op, ...radarFields };
+    }
   }
 
   const research = op.price_research;
@@ -135,7 +160,51 @@ export async function OpportunityDetail({
           <dt className="text-xs uppercase tracking-wide text-ink/40">Set-Aside</dt>
           <dd>{op.set_aside_type ?? "Full and open"}</dd>
         </div>
+        <div>
+          <dt className="text-xs uppercase tracking-wide text-ink/40">Radar</dt>
+          <dd>
+            {isRadarKind(op.radar_kind) ? (
+              <>
+                {RADAR_KIND_LABELS[op.radar_kind]}
+                {op.radar_option_years != null ? ` · ${op.radar_option_years} option years` : ""}
+                {op.radar_event_date
+                  ? ` · ${new Date(`${op.radar_event_date}T00:00:00.000Z`).toLocaleDateString()}`
+                  : ""}
+              </>
+            ) : (
+              <span title="No recompete, option, or period-of-performance language in the notice">
+                No signal in notice
+              </span>
+            )}
+          </dd>
+        </div>
+        <div className="col-span-2 sm:col-span-3">
+          <dt className="text-xs uppercase tracking-wide text-ink/40">SCA / wage determination</dt>
+          <dd>
+            {op.sca_wd_number ? (
+              op.sca_wd_url ? (
+                <a
+                  href={op.sca_wd_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline decoration-gold-500 decoration-2 underline-offset-2 hover:text-gold-600"
+                >
+                  WD {op.sca_wd_number}
+                </a>
+              ) : (
+                `WD ${op.sca_wd_number}`
+              )
+            ) : op.sca_mentioned ? (
+              "Notice mentions a wage determination — no WD number in the SAM text"
+            ) : (
+              "Not in this notice"
+            )}
+          </dd>
+        </div>
       </dl>
+      {op.radar_evidence && (
+        <p className="mt-3 text-xs text-ink/55">{op.radar_evidence}</p>
+      )}
 
       <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1">
         {op.notice_url && (

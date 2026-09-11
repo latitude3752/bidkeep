@@ -5,6 +5,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://example.com";
 const routes: { path: string; priority: number; changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"] }[] = [
   { path: "", priority: 1.0, changeFrequency: "monthly" },
   { path: "/opportunities", priority: 0.9, changeFrequency: "daily" },
+  { path: "/radar", priority: 0.9, changeFrequency: "daily" },
   { path: "/grants", priority: 0.9, changeFrequency: "daily" },
   { path: "/set-asides", priority: 0.8, changeFrequency: "monthly" },
   { path: "/start", priority: 0.8, changeFrequency: "monthly" },
