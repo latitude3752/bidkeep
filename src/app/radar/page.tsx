@@ -27,7 +27,7 @@ export default async function RadarPage() {
       <section className="mx-auto max-w-6xl px-6 pt-16">
         <p className="text-sm font-semibold uppercase tracking-[0.15em] text-gold-600">
           {stats.signalCount > 0
-            ? `${stats.signalCount.toLocaleString()} classified signals · ${stats.recompeteCount} recompete · ${stats.optionCount} option · ${stats.expirationCount} period end`
+            ? `${stats.signalCount.toLocaleString()} classified signals · ${stats.recompeteCount} recompete · ${stats.optionCount} option · ${stats.expirationCount} period end · ${stats.earlySignalCount} possible early`
             : "Classified from notice language after each SAM.gov sync"}
         </p>
       </section>
@@ -53,13 +53,12 @@ export default async function RadarPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="grid gap-10 md:grid-cols-3">
+        <div className="grid gap-10 md:grid-cols-4">
           <div>
             <h2 className="text-lg font-semibold text-navy-950">Recompete</h2>
             <p className="mt-2 text-sm leading-relaxed text-ink/70">
-              Title or description says recompete, follow-on, successor, or
-              incumbent contract — or a facilities Sources Sought / presolicitation
-              that is the early window before the RFP.
+              Title or description explicitly says recompete, follow-on,
+              successor, or incumbent contract.
             </p>
           </div>
           <div>
@@ -74,6 +73,14 @@ export default async function RadarPage() {
             <p className="mt-2 text-sm leading-relaxed text-ink/70">
               A period of performance range in the notice (“POP is from 5/1/2025
               thru 4/30/2026”). Award dates and notice archive dates are ignored.
+            </p>
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-navy-950">Possible early opportunity</h2>
+            <p className="mt-2 text-sm leading-relaxed text-ink/70">
+              A facilities Sources Sought, Presolicitation, or Special Notice
+              with no recompete or incumbent language actually in the notice —
+              an early window worth watching, not a confirmed recompete.
             </p>
           </div>
         </div>

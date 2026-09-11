@@ -114,16 +114,17 @@ describe("classifyRadarSignal", () => {
     expect(result.eventDate).toBe("2027-09-30");
   });
 
-  it("treats a facilities Sources Sought as an early recompete window", () => {
+  it("treats a facilities Sources Sought with no incumbent language as a possible early opportunity, not a recompete", () => {
     const result = classifyRadarSignal({
       title: "Tyndall Base Custodial Services IDIQ",
       noticeType: "Sources Sought",
       requirementsText:
         "The 325th Contracting Squadron at Tyndall AFB, FL, is issuing this RFI for qualified 8(a) firms to provide custodial services.",
     });
-    expect(result.kind).toBe("recompete");
+    expect(result.kind).toBe("early_signal");
     expect(result.source).toBe("notice_type");
     expect(result.eventDate).toBeNull();
+    expect(result.evidence).not.toMatch(/recompete/i);
   });
 
   it("does not treat a random Sources Sought as a radar hit", () => {

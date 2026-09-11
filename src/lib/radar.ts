@@ -13,7 +13,7 @@
  * WD is an honest empty — not a guess from archiveDate or award.date.
  */
 
-export const RADAR_KINDS = ["recompete", "option", "expiration"] as const;
+export const RADAR_KINDS = ["recompete", "option", "expiration", "early_signal"] as const;
 export type RadarKind = (typeof RADAR_KINDS)[number];
 
 export const RADAR_SOURCES = [
@@ -131,6 +131,7 @@ export const RADAR_KIND_LABELS: Record<RadarKind, string> = {
   recompete: "Recompete",
   option: "Option exercise",
   expiration: "Period end",
+  early_signal: "Possible early opportunity",
 };
 
 export function isRadarKind(value: string | null | undefined): value is RadarKind {
@@ -367,10 +368,13 @@ export function classifyRadarSignal(input: RadarNoticeInput): RadarClassificatio
 
   const noticeType = normalizeNoticeText(input.noticeType);
   if (EARLY_NOTICE_TYPES.has(noticeType) && /\b(?:custodial|janitorial|grounds|landscap|guard|patrol|facilit(?:y|ies)|base[- ]ops)\b/i.test(text)) {
+    // Notice type + facilities keyword only — no recompete, follow-on, or
+    // incumbent language actually appears in the notice. This is a weaker
+    // signal than a real RECOMPETE_RE match and must not be labeled the same.
     return {
-      kind: "recompete",
+      kind: "early_signal",
       eventDate: null,
-      evidence: `${noticeType} for facilities work — early recompete / follow-on window`,
+      evidence: `${noticeType} for facilities work — no incumbent or follow-on language found in the notice itself`,
       source: "notice_type",
       optionYears: null,
     };

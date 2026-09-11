@@ -31,6 +31,7 @@ export type RadarStats = {
   recompeteCount: number;
   optionCount: number;
   expirationCount: number;
+  earlySignalCount: number;
   scaMentionCount: number;
   scaWdCount: number;
 };
@@ -46,7 +47,7 @@ const SCA_SELECT = "title, notice_id, notice_url, sca_wd_number, sca_wd_url, sca
  * and not customer proof. Used only when the persisted radar is empty. */
 export const RADAR_EXAMPLE_ROWS: SampleRadarRow[] = [
   {
-    title: "Example — custodial sources sought ahead of a follow-on",
+    title: "Example — custodial sources sought with no incumbent language",
     agency: "DEPT OF DEFENSE.DEPT OF THE AIR FORCE",
     naicsCode: "561720",
     noticeId: null,
@@ -55,10 +56,10 @@ export const RADAR_EXAMPLE_ROWS: SampleRadarRow[] = [
     noticeType: "Sources Sought",
     placeOfPerformanceState: "FL",
     responseDeadline: null,
-    kind: "recompete",
+    kind: "early_signal",
     eventDate: null,
     evidence:
-      "Illustrated language: a facilities Sources Sought / RFI is treated as an early recompete window. Not a live BidKeep row.",
+      "Illustrated language: a facilities Sources Sought / RFI with no recompete or incumbent wording is flagged as a possible early opportunity, not a confirmed recompete. Not a live BidKeep row.",
     optionYears: null,
     scaMentioned: false,
     scaWdNumber: null,
@@ -166,6 +167,7 @@ export async function getRadarStats(): Promise<RadarStats> {
     recompeteCount: 0,
     optionCount: 0,
     expirationCount: 0,
+    earlySignalCount: 0,
     scaMentionCount: 0,
     scaWdCount: 0,
   };
@@ -181,6 +183,7 @@ export async function getRadarStats(): Promise<RadarStats> {
       recompeteCount: rows.filter((r) => r.radar_kind === "recompete").length,
       optionCount: rows.filter((r) => r.radar_kind === "option").length,
       expirationCount: rows.filter((r) => r.radar_kind === "expiration").length,
+      earlySignalCount: rows.filter((r) => r.radar_kind === "early_signal").length,
       scaMentionCount: rows.filter((r) => r.sca_mentioned).length,
       scaWdCount: rows.filter((r) => r.sca_wd_number).length,
     };
