@@ -484,7 +484,12 @@ export default async function OpportunityPipeline({
   const pageCount = Math.max(1, Math.ceil(allRows.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const rows = allRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const trackedNaicsCodes = new Set((await getAllNaicsCodes()).map((c) => c.code));
+  let trackedNaicsCodes = new Set<string>();
+  try {
+    trackedNaicsCodes = new Set((await getAllNaicsCodes()).map((c) => c.code));
+  } catch (err) {
+    console.error("tracked NAICS codes unavailable:", err);
+  }
   const horizonEnd =
     filters.horizonDays === null
       ? null
