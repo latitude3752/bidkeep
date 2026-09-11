@@ -4,6 +4,7 @@ import { QUOTE_LINE_CATEGORY_LABELS } from "@/lib/quote-worksheet";
 import type { CompanyProfile } from "@/lib/company-profiles";
 import { NOISE_NOTICE_TYPES, isEligibleSetAside, SET_ASIDE_CERTIFICATION_LABELS } from "@/lib/opportunities";
 import PrintButton from "@/components/PrintButton";
+import { formatDeadlineWithZone } from "@netacracy/bid-core";
 
 function formatMoney(n: number): string {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 });
@@ -73,7 +74,7 @@ export default function Proposal({
       label: "Response deadline",
       ok: !deadlinePassed,
       detail: op.response_deadline
-        ? `Due ${new Date(op.response_deadline).toLocaleDateString()}${deadlinePassed ? " — already past" : ""}`
+        ? `Due ${formatDeadlineWithZone(op.response_deadline)}${deadlinePassed ? " — already past" : ""}`
         : "No deadline on file — confirm against the solicitation",
     },
     {

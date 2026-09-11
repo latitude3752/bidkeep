@@ -5,7 +5,7 @@ import type { PriceResearchResult } from "@/lib/contract-awards";
 import StatusSelect from "../StatusSelect";
 import ResearchButton from "./ResearchButton";
 import ScaleButton from "./ScaleButton";
-import { ensureOpportunityScale, extractSubmissionMethod } from "@netacracy/bid-core";
+import { ensureOpportunityScale, extractSubmissionMethods, formatDeadlineWithZone } from "@netacracy/bid-core";
 import { radarPersistFields, RADAR_KIND_LABELS, isRadarKind, type RadarKind } from "@/lib/radar";
 import { getCurrentSeat } from "@/lib/current-seat";
 import { getCompanyProfile } from "@/lib/company-profiles";
@@ -100,7 +100,7 @@ export async function OpportunityDetail({
   }
 
   const research = op.price_research;
-  const submission = extractSubmissionMethod(op.requirements_text);
+  const submissionChannels = extractSubmissionMethods(op.requirements_text);
 
   const isSubscriberView = basePath === "/app/opportunities";
   const seat = isSubscriberView ? await getCurrentSeat() : null;
@@ -138,7 +138,7 @@ export async function OpportunityDetail({
         </div>
         <div>
           <dt className="text-xs uppercase tracking-wide text-ink/40">Deadline</dt>
-          <dd>{op.response_deadline ? new Date(op.response_deadline).toLocaleDateString() : "—"}</dd>
+          <dd>{op.response_deadline ? formatDeadlineWithZone(op.response_deadline) : "—"}</dd>
         </div>
         <div>
           <dt className="text-xs uppercase tracking-wide text-ink/40">Scale</dt>
@@ -217,23 +217,37 @@ export async function OpportunityDetail({
             View full solicitation on SAM.gov ↗
           </a>
         )}
-        {submission?.method === "email" ? (
-          <a
-            href={`mailto:${submission.email}`}
-            className="inline-block text-sm underline decoration-gold-500 decoration-2 underline-offset-2 hover:text-gold-600"
-            title="This notice's own text asks for the response by email, not through PIEE"
-          >
-            Email your quote to {submission.email} ↗
-          </a>
+        {submissionChannels.length > 0 ? (
+          submissionChannels.map((channel) =>
+            channel.method === "email" ? (
+              <a
+                key={`email-${channel.email}`}
+                href={`mailto:${channel.email}`}
+                className="inline-block text-sm underline decoration-gold-500 decoration-2 underline-offset-2 hover:text-gold-600"
+                title={`This notice's own text says: "${channel.evidence}"`}
+              >
+                Email your quote to {channel.email} ↗
+              </a>
+            ) : (
+              <a
+                key={`portal-${channel.name}`}
+                href={channel.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block text-sm underline decoration-gold-500 decoration-2 underline-offset-2 hover:text-gold-600"
+                title={`This notice's own text says: "${channel.evidence}"`}
+              >
+                Submit via {channel.name} ↗
+              </a>
+            )
+          )
         ) : (
-          <a
-            href="https://piee.eb.mil"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block text-sm underline decoration-gold-500 decoration-2 underline-offset-2 hover:text-gold-600"
+          <span
+            className="inline-block text-sm text-ink/50"
+            title="No explicit submission address or named portal found in this notice's text — check the full solicitation on SAM.gov"
           >
-            Submit via PIEE ↗
-          </a>
+            Check submission instructions
+          </span>
         )}
       </div>
 

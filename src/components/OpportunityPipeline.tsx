@@ -15,7 +15,12 @@ import {
   type KeepSegmentId,
 } from "@/lib/default-criteria";
 import { getCurrentSeat } from "@/lib/current-seat";
-import { getAllNaicsCodes, distanceFromZipMiles, listRelevanceVotes } from "@netacracy/bid-core";
+import {
+  getAllNaicsCodes,
+  distanceFromZipMiles,
+  listRelevanceVotes,
+  formatDeadlineWithZone,
+} from "@netacracy/bid-core";
 import { explainNaicsMatch } from "@/lib/match-explanation";
 import RelevanceButtons from "@/components/RelevanceButtons";
 import SavedGeo from "@/components/SavedGeo";
@@ -1016,11 +1021,7 @@ export default async function OpportunityPipeline({
                   })()}
                 </td>
                 <td className="p-3 text-ink/70">
-                  {op.response_deadline
-                    ? new Date(op.response_deadline).toLocaleDateString("en-US", {
-                        timeZone: "America/New_York",
-                      })
-                    : "—"}
+                  {op.response_deadline ? formatDeadlineWithZone(op.response_deadline) : "—"}
                 </td>
                 <td className="p-3">
                   <StatusSelect id={op.id} status={op.status} />

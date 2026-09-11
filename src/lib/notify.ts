@@ -1,5 +1,5 @@
 import "server-only";
-import { selectActionDigest } from "@netacracy/bid-core";
+import { selectActionDigest, formatDeadlineWithZone } from "@netacracy/bid-core";
 import { escapeHtml, isEmailConfigured, sendEmail } from "@/lib/mailer";
 import { listActiveSeats } from "@/lib/subscriber-seats";
 
@@ -116,9 +116,7 @@ export async function notifyNewOpportunities(
   const { selected, omitted } = selectActionDigest(opportunities);
   const items = selected
     .map((op) => {
-      const deadline = op.responseDeadline
-        ? new Date(op.responseDeadline).toLocaleDateString()
-        : "no deadline listed";
+      const deadline = formatDeadlineWithZone(op.responseDeadline);
       const safeTitle = escapeHtml(op.title);
       const safeUrl = op.noticeUrl ? safeHttpUrl(op.noticeUrl) : null;
       const title = safeUrl
