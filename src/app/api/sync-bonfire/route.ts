@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthorizedCronRequest } from "@netacracy/bid-core";
+import { isAuthorizedCronRequest, recordSyncRun } from "@netacracy/bid-core";
 import { fetchAllBonfireOpportunities } from "@/lib/bonfire";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { notifySyncErrors } from "@/lib/notify";
@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (errors.length > 0) await notifySyncErrors(errors, "Bonfire");
+  await recordSyncRun({ source: "bonfire", fetched: opportunities.length, upserted, errors });
 
   return NextResponse.json({ fetched: opportunities.length, upserted, errors });
 }

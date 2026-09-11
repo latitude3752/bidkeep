@@ -4,6 +4,13 @@ import { NextRequest } from "next/server";
 const notifySyncErrors = vi.fn(async (_errors: string[], _source: string) => {});
 vi.mock("@/lib/notify", () => ({ notifySyncErrors }));
 
+const recordSyncRun = vi.fn(async (_run: { source: string; fetched?: number; upserted: number; errors: string[] }) => {});
+vi.mock("@netacracy/bid-core", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  recordSyncRun: (run: { source: string; fetched?: number; upserted: number; errors: string[] }) =>
+    recordSyncRun(run),
+}));
+
 let fetchResult: { opportunities: Array<{ noticeId: string; title: string }>; errors: string[] } = {
   opportunities: [],
   errors: [],
@@ -67,6 +74,7 @@ describe("GET /api/sync-tx-esbd", () => {
     supabaseMock = makeSupabaseAdminMock();
     fetchResult = { opportunities: [], errors: [] };
     notifySyncErrors.mockClear();
+    recordSyncRun.mockClear();
   });
   afterEach(() => {
     delete process.env.CRON_SECRET;
@@ -83,6 +91,7 @@ describe("GET /api/sync-tx-esbd", () => {
     expect(supabaseMock.getRetireCall()).not.toBeNull();
     expect(body.retired).toBe(7);
     expect(body.errors).toEqual([]);
+    expect(recordSyncRun).toHaveBeenCalledWith({ source: "tx-esbd", fetched: 1, upserted: 1, errors: [] });
   });
 
   it("never retires when a keyword page failed", async () => {

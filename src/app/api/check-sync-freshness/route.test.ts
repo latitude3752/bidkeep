@@ -6,7 +6,7 @@ const notifySyncErrors = vi.fn(async (_errors: string[], _source?: string) => {}
 
 vi.mock("@netacracy/bid-core", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  lastSuccessfulSyncRun: () => lastSuccessfulSyncRun(),
+  lastSuccessfulSyncRun: (sources?: string[]) => lastSuccessfulSyncRun(sources),
 }));
 
 vi.mock("@/lib/notify", () => ({
@@ -59,6 +59,15 @@ describe("GET /api/check-sync-freshness", () => {
 
     expect(body.stale).toBe(false);
     expect(notifySyncErrors).not.toHaveBeenCalled();
+  });
+
+  it("scopes the freshness check to the SAM.gov sources only", async () => {
+    lastSuccessfulSyncRun.mockResolvedValue(null);
+
+    const { GET } = await import("./route");
+    await GET(authedRequest());
+
+    expect(lastSuccessfulSyncRun).toHaveBeenCalledWith(["direct", "relay"]);
   });
 
   it("alerts when the last successful run is stale", async () => {

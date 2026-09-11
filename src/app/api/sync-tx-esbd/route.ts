@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthorizedCronRequest } from "@netacracy/bid-core";
+import { isAuthorizedCronRequest, recordSyncRun } from "@netacracy/bid-core";
 import { fetchTxEsbdOpportunities } from "@/lib/tx-esbd";
 import { BONFIRE_FACILITIES_KEYWORDS } from "@/lib/bonfire";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (errors.length > 0) await notifySyncErrors(errors, "TX ESBD");
+  await recordSyncRun({ source: "tx-esbd", fetched: opportunities.length, upserted, errors });
 
   return NextResponse.json({ fetched: opportunities.length, upserted, retired, errors });
 }

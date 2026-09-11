@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { listRecentSyncRuns } from "@netacracy/bid-core";
+import {
+  listRecentSyncRuns,
+  sourceHealthSummary,
+  type SourceHealthGroup,
+} from "@netacracy/bid-core";
 
 export const metadata = { title: "Sync Status | Admin" };
 export const dynamic = "force-dynamic";
@@ -7,6 +11,16 @@ export const dynamic = "force-dynamic";
 /** Same threshold the daily freshness-check cron alerts on -- gives a full
  * cron cycle (24h) plus buffer before flagging a run as stale. */
 const STALE_HOURS = 30;
+
+/** Every real-world data source this app syncs, grouped by how the health
+ * dashboard should present them -- SAM.gov bundles "direct" and "relay"
+ * into one card since only one of them is ever populated per app. */
+const SOURCE_GROUPS: { label: string; sources: SourceHealthGroup["sources"] }[] = [
+  { label: "SAM.gov", sources: ["direct", "relay"] },
+  { label: "Georgia (GPR)", sources: ["gpr"] },
+  { label: "Texas (ESBD)", sources: ["tx-esbd"] },
+  { label: "Bonfire", sources: ["bonfire"] },
+];
 
 function formatAge(ranAt: string, now: number): string {
   const hours = (now - new Date(ranAt).getTime()) / 3_600_000;
@@ -22,7 +36,10 @@ export default async function SyncStatusPage() {
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const runs = await listRecentSyncRuns(20);
-  const latest = runs[0];
+  const health = await sourceHealthSummary(SOURCE_GROUPS);
+  // Scoped to the SAM.gov group specifically -- a healthy GA/TX/Bonfire run
+  // must never mask this banner's "check BidHawk's relay" guidance.
+  const latest = health[0].lastRun;
   const latestAgeHours = latest
     ? (now - new Date(latest.ran_at).getTime()) / 3_600_000
     : Infinity;
@@ -56,28 +73,91 @@ export default async function SyncStatusPage() {
         </div>
       )}
 
-      <div className="mt-6 overflow-hidden rounded-xl border border-navy-950/10 bg-white">
-        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 border-b border-navy-950/10 p-3 text-xs font-semibold uppercase tracking-wide text-ink/40">
+      <div className="mt-8">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink/40">
+          Source health
+        </h2>
+        <div className="mt-2 grid gap-3 sm:grid-cols-2">
+          {health.map((group) => {
+            const lastRunFailed = Boolean(group.lastRun && group.lastRun.error_count > 0);
+            const lastRunAgeHours = group.lastRun
+              ? (now - new Date(group.lastRun.ran_at).getTime()) / 3_600_000
+              : Infinity;
+            const noRecentRun = lastRunAgeHours > STALE_HOURS;
+            return (
+              <div
+                key={group.label}
+                className={`rounded-xl border p-4 ${
+                  lastRunFailed || noRecentRun
+                    ? "border-red-600/30 bg-red-50"
+                    : "border-navy-950/10 bg-white"
+                }`}
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-sm font-semibold text-navy-950">{group.label}</span>
+                  {group.lastRun ? (
+                    <span
+                      className="text-xs text-ink/50"
+                      title={group.lastRun.ran_at}
+                    >
+                      last attempt {formatAge(group.lastRun.ran_at, now)}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-ink/50">never run</span>
+                  )}
+                </div>
+                {group.lastRun && (
+                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-ink/60">
+                    <span>
+                      fetched{" "}
+                      <span className="font-mono text-ink/80">{group.lastRun.fetched ?? "—"}</span>
+                    </span>
+                    <span>
+                      upserted{" "}
+                      <span className="font-mono text-ink/80">{group.lastRun.upserted}</span>
+                    </span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 font-semibold ${
+                        lastRunFailed ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
+                      }`}
+                      title={group.lastRun.errors.join("\n")}
+                    >
+                      {group.lastRun.error_count} error{group.lastRun.error_count === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                )}
+                <p className="mt-2 text-xs text-ink/50">
+                  {group.lastSuccess
+                    ? `last success ${formatAge(group.lastSuccess.ran_at, now)}`
+                    : "no successful run recorded yet"}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-8 overflow-hidden rounded-xl border border-navy-950/10 bg-white">
+        <h2 className="border-b border-navy-950/10 p-3 text-xs font-semibold uppercase tracking-wide text-ink/40">
+          Last 20 runs, all sources
+        </h2>
+        <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 border-b border-navy-950/10 p-3 text-xs font-semibold uppercase tracking-wide text-ink/40">
           <span>Ran</span>
           <span>Source</span>
+          <span>Fetched</span>
           <span>Upserted</span>
           <span>Errors</span>
         </div>
         {runs.map((run) => (
           <div
             key={run.id}
-            className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 border-b border-navy-950/10 p-3 text-sm last:border-0"
+            className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-4 border-b border-navy-950/10 p-3 text-sm last:border-0"
           >
             <span title={run.ran_at}>{formatAge(run.ran_at, now)}</span>
-            <span
-              className={`justify-self-start rounded-full px-2 py-0.5 text-xs font-semibold ${
-                run.source === "relay"
-                  ? "bg-navy-950/10 text-navy-900"
-                  : "bg-gold-500/20 text-gold-700"
-              }`}
-            >
+            <span className="justify-self-start rounded-full bg-navy-950/10 px-2 py-0.5 text-xs font-semibold text-navy-900">
               {run.source}
             </span>
+            <span className="justify-self-end font-mono text-ink/70">{run.fetched ?? "—"}</span>
             <span className="justify-self-end font-mono text-ink/70">{run.upserted}</span>
             <span
               className={`justify-self-end rounded-full px-2 py-0.5 text-xs font-semibold ${

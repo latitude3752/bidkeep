@@ -18,7 +18,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const last = await lastSuccessfulSyncRun();
+  // Scoped to the SAM.gov pipeline only -- a healthy GA/TX/Bonfire run must
+  // never mask a dead SAM.gov relay, or vice versa.
+  const last = await lastSuccessfulSyncRun(["direct", "relay"]);
   const ageHours = last ? (Date.now() - new Date(last.ran_at).getTime()) / 3_600_000 : Infinity;
   const stale = ageHours > STALE_HOURS;
 
