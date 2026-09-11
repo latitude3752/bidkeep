@@ -20,6 +20,7 @@ const SOURCE_GROUPS: { label: string; sources: SourceHealthGroup["sources"] }[] 
   { label: "Georgia (GPR)", sources: ["gpr"] },
   { label: "Texas (ESBD)", sources: ["tx-esbd"] },
   { label: "Bonfire", sources: ["bonfire"] },
+  { label: "Grants", sources: ["grants"] },
 ];
 
 function formatAge(ranAt: string, now: number): string {

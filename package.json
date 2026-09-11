@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@netacracy/bid-core": "github:latitude3752/bid-core#v1.2.0",
+    "@netacracy/bid-core": "github:latitude3752/bid-core#v1.2.1",
     "@supabase/supabase-js": "^2.112.3",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",

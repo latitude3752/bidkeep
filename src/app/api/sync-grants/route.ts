@@ -1,5 +1,5 @@
 import { after, NextRequest, NextResponse } from "next/server";
-import { isAuthorizedCronRequest } from "@netacracy/bid-core";
+import { isAuthorizedCronRequest, recordSyncRun } from "@netacracy/bid-core";
 import { searchAwardPageByProgramNumber, type GrantAward } from "@/lib/usaspending";
 import { searchFundingOpportunitiesByAln, type FundingOpportunity } from "@/lib/grants-gov";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -250,6 +250,11 @@ export async function GET(request: NextRequest) {
   const fundingDigestError = await notifyNewFundingOpportunities(newFundingOpportunities);
   if (fundingDigestError) errors.push(fundingDigestError);
   await notifySyncErrors(errors, "grants");
+  await recordSyncRun({
+    source: "grants",
+    upserted: chunkResult.upserted + chunkResult.fundingOpportunitiesUpserted,
+    errors,
+  });
 
   let continued = false;
   const canContinue =

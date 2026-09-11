@@ -12,6 +12,12 @@ vi.mock("@/lib/notify", () => ({
   notifySyncErrors,
 }));
 
+const recordSyncRun = vi.fn(async (_run: { source: string; upserted: number; errors: string[] }) => {});
+vi.mock("@netacracy/bid-core", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  recordSyncRun: (run: { source: string; upserted: number; errors: string[] }) => recordSyncRun(run),
+}));
+
 vi.mock("next/server", async (importOriginal) => {
   const actual = await importOriginal<typeof import("next/server")>();
   return { ...actual, after: (...args: unknown[]) => afterMock(...args) };
@@ -154,6 +160,7 @@ describe("GET /api/sync-grants", () => {
     notifyNewGrantAwards.mockClear().mockResolvedValue(null);
     notifyNewFundingOpportunities.mockClear().mockResolvedValue(null);
     notifySyncErrors.mockClear();
+    recordSyncRun.mockClear();
     afterMock.mockClear();
     delete process.env.GRANT_SYNC_BUDGET_MS;
   });
@@ -214,6 +221,8 @@ describe("GET /api/sync-grants", () => {
     const notified = notifyNewGrantAwards.mock.calls[0][0] as Array<{ recipientName: string }>;
     expect(notified).toHaveLength(1);
     expect(body.notified).toBe(1);
+
+    expect(recordSyncRun).toHaveBeenCalledWith({ source: "grants", upserted: 1, errors: [] });
   });
 
   it("does not re-notify an award that was already upserted on a prior sync", async () => {
@@ -443,6 +452,7 @@ describe("GET /api/sync-grants", () => {
     expect(res.status).toBe(200);
     expect(body.skipped).toBe("already-completed-today");
     expect(fetchMock).not.toHaveBeenCalled();
+    expect(recordSyncRun).not.toHaveBeenCalled();
     expect(notifyNewGrantAwards).not.toHaveBeenCalled();
   });
 });
