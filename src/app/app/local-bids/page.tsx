@@ -62,44 +62,72 @@ function formatGovType(type: string | null): string {
   }
 }
 
-async function getOpenGprOpportunities(): Promise<GprRow[]> {
+type SourceResult<T> = { rows: T[]; loadError: boolean };
+
+/** GPR's own query already returns only currently-open listings; retired_at
+ * marks the ones that fell out of a later successful fetch (see
+ * sync-gpr), and closing_date is a real `date` column so a stale row
+ * whose deadline has already passed is excluded even if it hasn't been
+ * swept yet. A query error is surfaced as loadError rather than silently
+ * rendered as "no listings" -- those are not the same thing. */
+async function getOpenGprOpportunities(): Promise<SourceResult<GprRow>> {
   const admin = getSupabaseAdmin();
-  const { data } = await admin
+  const today = new Date().toISOString().slice(0, 10);
+  const { data, error } = await admin
     .from("gpr_opportunities")
     .select("id, title, agency_name, government_type, posting_date, closing_date, bid_process_type, detail_url")
     .eq("status", "Open")
+    .is("retired_at", null)
+    .or(`closing_date.gte.${today},closing_date.is.null`)
     .order("closing_date", { ascending: true })
     .limit(200);
-  return (data ?? []) as GprRow[];
+  return { rows: (data ?? []) as GprRow[], loadError: Boolean(error) };
 }
 
-async function getOpenTxEsbdOpportunities(): Promise<TxRow[]> {
+/** ESBD's response_due is free-text (not a parseable date column), so
+ * retired_at -- set when a row falls out of a successful status=Posted
+ * fetch -- is the only reliable freshness signal here. */
+async function getOpenTxEsbdOpportunities(): Promise<SourceResult<TxRow>> {
   const admin = getSupabaseAdmin();
-  const { data } = await admin
+  const { data, error } = await admin
     .from("tx_esbd_opportunities")
     .select("id, title, agency_name, status_name, response_due, response_time, detail_url")
+    .is("retired_at", null)
     .order("response_due", { ascending: true })
     .limit(200);
-  return (data ?? []) as TxRow[];
+  return { rows: (data ?? []) as TxRow[], loadError: Boolean(error) };
 }
 
-async function getOpenBonfireOpportunities(): Promise<BonfireRow[]> {
+async function getOpenBonfireOpportunities(): Promise<SourceResult<BonfireRow>> {
   const admin = getSupabaseAdmin();
-  const { data } = await admin
+  const { data, error } = await admin
     .from("bonfire_opportunities")
     .select("id, title, state, date_open, date_close, search_url")
     .gte("date_close", new Date().toISOString())
     .order("date_close", { ascending: true })
     .limit(200);
-  return (data ?? []) as BonfireRow[];
+  return { rows: (data ?? []) as BonfireRow[], loadError: Boolean(error) };
+}
+
+function LoadErrorNotice() {
+  return (
+    <tr>
+      <td colSpan={5} className="p-6 text-center text-red-700">
+        Couldn&apos;t load this source right now — try refreshing in a moment.
+      </td>
+    </tr>
+  );
 }
 
 export default async function LocalBidsPage() {
-  const [gprRows, txRows, bonfireRows] = await Promise.all([
+  const [gpr, tx, bonfire] = await Promise.all([
     getOpenGprOpportunities(),
     getOpenTxEsbdOpportunities(),
     getOpenBonfireOpportunities(),
   ]);
+  const gprRows = gpr.rows;
+  const txRows = tx.rows;
+  const bonfireRows = bonfire.rows;
 
   return (
     <section className="mx-auto max-w-6xl px-6 py-12">
@@ -169,7 +197,8 @@ export default async function LocalBidsPage() {
                   </td>
                 </tr>
               ))}
-              {gprRows.length === 0 && (
+              {gpr.loadError && <LoadErrorNotice />}
+              {!gpr.loadError && gprRows.length === 0 && (
                 <tr>
                   <td colSpan={5} className="p-6 text-center text-ink/50">
                     No open listings synced yet — check back after the next sync.
@@ -224,7 +253,8 @@ export default async function LocalBidsPage() {
                   </td>
                 </tr>
               ))}
-              {txRows.length === 0 && (
+              {tx.loadError && <LoadErrorNotice />}
+              {!tx.loadError && txRows.length === 0 && (
                 <tr>
                   <td colSpan={5} className="p-6 text-center text-ink/50">
                     No open listings synced yet — check back after the next sync.
@@ -278,7 +308,8 @@ export default async function LocalBidsPage() {
                   </td>
                 </tr>
               ))}
-              {bonfireRows.length === 0 && (
+              {bonfire.loadError && <LoadErrorNotice />}
+              {!bonfire.loadError && bonfireRows.length === 0 && (
                 <tr>
                   <td colSpan={5} className="p-6 text-center text-ink/50">
                     No open listings synced yet — check back after the next sync.

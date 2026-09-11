@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const runStartedAt = new Date().toISOString();
   const { opportunities, errors } = await fetchTxEsbdOpportunities(BONFIRE_FACILITIES_KEYWORDS);
 
   const admin = getSupabaseAdmin();
@@ -43,7 +44,23 @@ export async function GET(request: NextRequest) {
     else upserted = count ?? rows.length;
   }
 
+  // ESBD's own query is scoped to status=Posted (open) only, so a row's
+  // absence from a successful fetch is the only signal it closed. A
+  // per-keyword page failure already lands in errors without aborting the
+  // other keywords, but a genuinely failed run must still skip retirement
+  // -- an incomplete fetch is not evidence anything closed.
+  let retired = 0;
+  if (errors.length === 0) {
+    const { count, error: retireErr } = await admin
+      .from("tx_esbd_opportunities")
+      .update({ retired_at: runStartedAt }, { count: "exact" })
+      .is("retired_at", null)
+      .lt("updated_at", runStartedAt);
+    if (retireErr) errors.push(`tx-esbd retire: ${retireErr.message}`);
+    else retired = count ?? 0;
+  }
+
   if (errors.length > 0) await notifySyncErrors(errors, "TX ESBD");
 
-  return NextResponse.json({ fetched: opportunities.length, upserted, errors });
+  return NextResponse.json({ fetched: opportunities.length, upserted, retired, errors });
 }

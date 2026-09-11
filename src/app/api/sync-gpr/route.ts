@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const runStartedAt = new Date().toISOString();
   const { opportunities, errors } = await fetchGprOpportunities();
 
   const admin = getSupabaseAdmin();
@@ -44,7 +45,23 @@ export async function GET(request: NextRequest) {
     else upserted = count ?? rows.length;
   }
 
+  // GPR's own query only ever returns currently-open listings, so a row's
+  // absence from a successful fetch is the only signal that it closed.
+  // Never retire on a failed fetch -- errors.length > 0 means we don't
+  // actually know what's still open, and treating that like "everything
+  // closed" would be worse than the stale row it's meant to fix.
+  let retired = 0;
+  if (errors.length === 0) {
+    const { count, error: retireErr } = await admin
+      .from("gpr_opportunities")
+      .update({ retired_at: runStartedAt }, { count: "exact" })
+      .is("retired_at", null)
+      .lt("updated_at", runStartedAt);
+    if (retireErr) errors.push(`gpr retire: ${retireErr.message}`);
+    else retired = count ?? 0;
+  }
+
   if (errors.length > 0) await notifySyncErrors(errors, "GPR");
 
-  return NextResponse.json({ fetched: opportunities.length, upserted, errors });
+  return NextResponse.json({ fetched: opportunities.length, upserted, retired, errors });
 }
