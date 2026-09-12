@@ -7,7 +7,7 @@
  * product family rather than four isolated pages easily overwhelmed by
  * an unrelated same-named competitor. */
 export const BID_FAMILY = [
-  { name: "BidHawk", host: "trybidhawk.com", url: "https://trybidhawk.com", vertical: "UAS & counter-UAS" },
+  { name: "BidHawk", host: "trybidhawk.com", url: "https://trybidhawk.com", vertical: "UAS, counter-UAS & ground robotics" },
   { name: "BidYard", host: "trybidyard.com", url: "https://trybidyard.com", vertical: "construction" },
   { name: "BidPulse", host: "trybidpulse.com", url: "https://trybidpulse.com", vertical: "medical & healthcare" },
   { name: "BidKeep", host: "trybidkeep.com", url: "https://trybidkeep.com", vertical: "facilities" },
