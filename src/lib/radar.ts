@@ -13,7 +13,13 @@
  * WD is an honest empty — not a guess from archiveDate or award.date.
  */
 
-export const RADAR_KINDS = ["recompete", "option", "expiration", "early_signal"] as const;
+export const RADAR_KINDS = [
+  "recompete",
+  "sole_source_followon",
+  "option",
+  "expiration",
+  "early_signal",
+] as const;
 export type RadarKind = (typeof RADAR_KINDS)[number];
 
 export const RADAR_SOURCES = [
@@ -60,6 +66,26 @@ export type RadarPersistFields = {
 
 const RECOMPETE_RE =
   /\b(?:re-?compete|follow[- ]on(?:\s+contract)?|successor\s+contract|incumbent\s+contract|replacement\s+contract)\b/i;
+
+/** Boilerplate that negates a nearby RECOMPETE_RE match rather than
+ * confirming one -- e.g. "no commitment to any follow-on announcement" is
+ * standard sources-sought disclaimer language, not evidence a recompete is
+ * coming (Sep 12 audit's Yokota example: a construction-site
+ * security-monitoring notice matched purely on this boilerplate). */
+const RECOMPETE_NEGATION_RE =
+  /\bno\s+(?:commitment|guarantee|assurance|obligation)\b|\bdoes\s+not\s+(?:guarantee|commit|obligate)\b|\bis\s+not\s+(?:obligated|guaranteed|committed)\b|\bnot\s+obligated\b|\bno\s+assurance\b|\bnot\s+a\s+commitment\b|\bmay\s+or\s+may\s+not\b/i;
+
+/** A recompete/follow-on match co-occurring with this is a sole-source
+ * follow-on to a named incumbent -- useful incumbent intelligence, but not
+ * an ordinary competitive recompete another small business could win (Sep
+ * 12 audit's USPTO example). Classified separately (see
+ * findRecompeteEvidence) instead of under the plain "recompete" kind. */
+const SOLE_SOURCE_RE = /\bsole[- ]source\b/i;
+
+/** How far around a RECOMPETE_RE match to look for negation or sole-source
+ * language -- wide enough to catch the same sentence/clause, narrow enough
+ * not to pick up an unrelated disclaimer elsewhere in a long notice. */
+const RECOMPETE_CONTEXT_WINDOW = 100;
 
 const OPTION_RE =
   /\b(?:option\s+years?|option\s+period|option\s+to\s+extend|exercise(?:s|d)?\s+(?:the\s+)?option|base(?:\s+year|\s+period)?(?:\s+\+\s*|\s+plus\s+|\s+with\s+)\d+|b\s*\+\s*\d+)\b/i;
@@ -129,7 +155,14 @@ const WORD_NUMBERS: Record<string, number> = {
 
 export const RADAR_KIND_LABELS: Record<RadarKind, string> = {
   recompete: "Recompete",
-  option: "Option exercise",
+  sole_source_followon: "Sole-source follow-on",
+  // "Option exercise" overstated ordinary contract structure: matching a
+  // FAR option-extension clause or "N option years" is evidence a base+option
+  // structure exists, not that an exercise decision has actually been made or
+  // announced (Sep 12 audit's USCG/B1990 examples were both plain structural
+  // boilerplate, not exercise announcements). "Options identified" is the
+  // accurate default until the classifier can tell the two apart.
+  option: "Options identified",
   expiration: "Period end",
   early_signal: "Possible early opportunity",
 };
@@ -306,6 +339,39 @@ function findKind(
   return null;
 }
 
+type RecompeteEvidence = { source: RadarSource; evidence: string; soleSource: boolean };
+
+/** Finds the first RECOMPETE_RE match that isn't itself sitting inside
+ * negating boilerplate. Unlike findKind, this checks every match in a layer
+ * (not just the first) before moving to the next layer, since a notice can
+ * contain both a negated disclaimer paragraph and, elsewhere, real
+ * actionable language. Also flags whether the match sits near sole-source
+ * wording, since that changes what kind the caller should classify it as. */
+function findRecompeteEvidence(layers: Layer[]): RecompeteEvidence | null {
+  for (const layer of [...layers].reverse()) {
+    const re = new RegExp(RECOMPETE_RE.source, "gi");
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(layer.text))) {
+      const windowStart = Math.max(0, match.index - RECOMPETE_CONTEXT_WINDOW);
+      const windowEnd = Math.min(
+        layer.text.length,
+        match.index + match[0].length + RECOMPETE_CONTEXT_WINDOW
+      );
+      const window = layer.text.slice(windowStart, windowEnd);
+      if (RECOMPETE_NEGATION_RE.test(window)) {
+        if (re.lastIndex === match.index) re.lastIndex++;
+        continue;
+      }
+      return {
+        source: layer.source,
+        evidence: excerptAround(layer.text, match.index, match[0].length),
+        soleSource: SOLE_SOURCE_RE.test(window),
+      };
+    }
+  }
+  return null;
+}
+
 export function classifyRadarSignal(input: RadarNoticeInput): RadarClassification {
   const layers = layersFrom(input);
   const text = combinedText(layers);
@@ -322,10 +388,10 @@ export function classifyRadarSignal(input: RadarNoticeInput): RadarClassificatio
   const popEnd = popMatch ? parseNoticeDate(popMatch[2]) : structuredPeriodEnd(input.rawData);
   const optionYears = parseOptionYears(text);
 
-  const recompete = findKind(layers, RECOMPETE_RE);
+  const recompete = findRecompeteEvidence(layers);
   if (recompete) {
     return {
-      kind: "recompete",
+      kind: recompete.soleSource ? "sole_source_followon" : "recompete",
       eventDate: popEnd,
       evidence: recompete.evidence,
       source: recompete.source,

@@ -127,6 +127,39 @@ describe("classifyRadarSignal", () => {
     expect(result.evidence).not.toMatch(/recompete/i);
   });
 
+  it("does not treat negated follow-on boilerplate as recompete evidence (Sep 12 audit)", () => {
+    // Real pattern from the Yokota construction-site security-monitoring
+    // notice: standard sources-sought disclaimer language, not an actual
+    // recompete/follow-on signal.
+    const result = classifyRadarSignal({
+      title: "Construction Site Security Monitoring Services",
+      noticeType: "Sources Sought",
+      requirementsText:
+        "This is a market research announcement only. The Government is not obligated to award a follow-on contract as a result of this notice, and there is no commitment to any follow-on announcement.",
+    });
+    expect(result.kind).not.toBe("recompete");
+  });
+
+  it("classifies a sole-source follow-on to a named incumbent separately from an ordinary recompete (Sep 12 audit)", () => {
+    // Real pattern from the USPTO example: an explicit sole-source follow-on
+    // is useful incumbent intelligence, not an open competitive recompete.
+    const result = classifyRadarSignal({
+      title: "Notice of Intent to Sole Source",
+      requirementsText:
+        "The agency intends to award a sole source follow-on contract to Acme Facilities Group, the incumbent contractor, to avoid a lapse in service.",
+    });
+    expect(result.kind).toBe("sole_source_followon");
+    expect(result.evidence).toMatch(/follow-on/i);
+  });
+
+  it("still classifies an ordinary competitive follow-on as recompete when sole-source isn't mentioned", () => {
+    const result = classifyRadarSignal({
+      title: "Follow-on custodial services, full and open competition",
+      requirementsText: "This requirement will be competed as a follow-on to the incumbent contract.",
+    });
+    expect(result.kind).toBe("recompete");
+  });
+
   it("does not treat a random Sources Sought as a radar hit", () => {
     expect(
       classifyRadarSignal({

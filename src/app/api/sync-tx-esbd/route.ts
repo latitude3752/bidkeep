@@ -36,6 +36,10 @@ export async function GET(request: NextRequest) {
       nigp_codes: o.nigpCodes,
       detail_url: o.detailUrl,
       updated_at: new Date().toISOString(),
+      // See sync-gpr/route.ts: without clearing retired_at on every upsert, a
+      // listing that closes and later reopens under the same id stays hidden
+      // forever behind the .is("retired_at", null) filter (Sep 12 audit).
+      retired_at: null,
     }));
     const { error, count } = await admin
       .from("tx_esbd_opportunities")

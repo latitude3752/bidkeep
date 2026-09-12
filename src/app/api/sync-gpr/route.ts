@@ -37,6 +37,12 @@ export async function GET(request: NextRequest) {
       electronic_bid: o.electronicBid,
       detail_url: o.detailUrl,
       updated_at: new Date().toISOString(),
+      // A row can be retired (closed) in one run and legitimately reappear
+      // in a later fetch -- GA re-lists amended or extended notices under
+      // the same id. Without clearing retired_at here, a reopened listing
+      // stays hidden forever behind the .is("retired_at", null) filter every
+      // list query uses (Sep 12 audit).
+      retired_at: null,
     }));
     const { error, count } = await admin
       .from("gpr_opportunities")

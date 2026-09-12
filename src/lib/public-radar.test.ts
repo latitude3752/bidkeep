@@ -14,7 +14,11 @@ describe("radar examples", () => {
 describe("radarKindLabel", () => {
   it("uses the subscriber-facing labels", () => {
     expect(radarKindLabel("recompete")).toBe("Recompete");
-    expect(radarKindLabel("option")).toBe("Option exercise");
+    expect(radarKindLabel("sole_source_followon")).toBe("Sole-source follow-on");
+    // "Options identified", not "Option exercise" -- matching a base+option
+    // structure isn't evidence an exercise decision was actually made or
+    // announced (Sep 12 audit).
+    expect(radarKindLabel("option")).toBe("Options identified");
     expect(radarKindLabel("expiration")).toBe("Period end");
     expect(radarKindLabel("early_signal")).toBe("Possible early opportunity");
   });

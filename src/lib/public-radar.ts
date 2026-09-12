@@ -29,6 +29,7 @@ export type SampleRadarRow = {
 export type RadarStats = {
   signalCount: number;
   recompeteCount: number;
+  soleSourceFollowonCount: number;
   optionCount: number;
   expirationCount: number;
   earlySignalCount: number;
@@ -165,6 +166,7 @@ export async function getRadarStats(): Promise<RadarStats> {
   const empty: RadarStats = {
     signalCount: 0,
     recompeteCount: 0,
+    soleSourceFollowonCount: 0,
     optionCount: 0,
     expirationCount: 0,
     earlySignalCount: 0,
@@ -181,6 +183,7 @@ export async function getRadarStats(): Promise<RadarStats> {
     return {
       signalCount: rows.filter((r) => r.radar_kind).length,
       recompeteCount: rows.filter((r) => r.radar_kind === "recompete").length,
+      soleSourceFollowonCount: rows.filter((r) => r.radar_kind === "sole_source_followon").length,
       optionCount: rows.filter((r) => r.radar_kind === "option").length,
       expirationCount: rows.filter((r) => r.radar_kind === "expiration").length,
       earlySignalCount: rows.filter((r) => r.radar_kind === "early_signal").length,

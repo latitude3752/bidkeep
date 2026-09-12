@@ -27,7 +27,7 @@ export default async function RadarPage() {
       <section className="mx-auto max-w-6xl px-6 pt-16">
         <p className="text-sm font-semibold uppercase tracking-[0.15em] text-gold-600">
           {stats.signalCount > 0
-            ? `${stats.signalCount.toLocaleString()} classified signals · ${stats.recompeteCount} recompete · ${stats.optionCount} option · ${stats.expirationCount} period end · ${stats.earlySignalCount} possible early`
+            ? `${stats.signalCount.toLocaleString()} classified signals · ${stats.recompeteCount} recompete · ${stats.soleSourceFollowonCount} sole-source follow-on · ${stats.optionCount} options identified · ${stats.expirationCount} period end · ${stats.earlySignalCount} possible early`
             : "Classified from notice language after each SAM.gov sync"}
         </p>
       </section>
