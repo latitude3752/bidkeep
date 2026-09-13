@@ -22,7 +22,11 @@ function formatCeiling(n: number): string {
   return `$${Math.round(n).toLocaleString("en-US")}`;
 }
 
-type PendingNotification = NotifiableOpportunity & { noticeId: string };
+type PendingNotification = NotifiableOpportunity & {
+  noticeId: string;
+  noticeType: string | null;
+  rawData: SamGovOpportunity;
+};
 
 type IngestItem = {
   naicsCode: string;
@@ -92,6 +96,8 @@ async function upsertResults(
         responseDeadline: row.response_deadline,
         naicsCode: row.naics_code,
         scaleLabel: null,
+        noticeType: row.notice_type,
+        rawData: row.raw_data,
       });
     }
   }
@@ -152,7 +158,14 @@ export async function POST(request: NextRequest) {
         if (text) {
           await supabase
             .from("opportunities")
-            .update(radarPersistFields({ title: op.title, requirementsText: text }))
+            .update(
+              radarPersistFields({
+                title: op.title,
+                noticeType: op.noticeType,
+                rawData: op.rawData,
+                requirementsText: text,
+              })
+            )
             .eq("id", oppId);
         }
 

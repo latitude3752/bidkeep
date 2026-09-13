@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
   // other keywords, but a genuinely failed run must still skip retirement
   // -- an incomplete fetch is not evidence anything closed.
   let retired = 0;
-  if (errors.length === 0) {
+  if (errors.length === 0 && opportunities.length > 0) {
     const { count, error: retireErr } = await admin
       .from("tx_esbd_opportunities")
       .update({ retired_at: runStartedAt }, { count: "exact" })

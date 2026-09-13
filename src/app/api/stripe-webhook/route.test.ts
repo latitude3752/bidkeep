@@ -109,6 +109,7 @@ describe("POST /api/stripe-webhook", () => {
 
     const first = await POST(postRequest());
     const firstBody = await first.json();
+    expect(first.status).toBe(500);
     expect(firstBody.duplicate).toBeUndefined();
     expect(createSeat).toHaveBeenCalledTimes(1);
     expect(notifySyncErrors).toHaveBeenCalledWith(
@@ -126,6 +127,7 @@ describe("POST /api/stripe-webhook", () => {
 
     const second = await POST(postRequest());
     const secondBody = await second.json();
+    expect(second.status).toBe(200);
     expect(secondBody.duplicate).toBeUndefined();
     expect(createSeat).toHaveBeenCalledTimes(2);
     expect(sendWelcomeEmail).toHaveBeenCalledTimes(1);
@@ -165,10 +167,12 @@ describe("POST /api/stripe-webhook", () => {
     const { POST } = await import("./route");
 
     const first = await POST(postRequest());
+    expect(first.status).toBe(500);
     expect((await first.json()).duplicate).toBeUndefined();
 
     const second = await POST(postRequest());
     const secondBody = await second.json();
+    expect(second.status).toBe(200);
     expect(secondBody.duplicate).toBeUndefined();
     expect(sendWelcomeEmail).toHaveBeenCalledTimes(2);
   });
@@ -179,11 +183,31 @@ describe("POST /api/stripe-webhook", () => {
 
     const { POST } = await import("./route");
 
-    await POST(postRequest());
+    const first = await POST(postRequest());
+    expect(first.status).toBe(200);
     expect(createSeat).not.toHaveBeenCalled();
 
     const second = await POST(postRequest());
     const secondBody = await second.json();
+    expect(second.status).toBe(200);
     expect(secondBody.duplicate).toBe(true);
+  });
+
+  it("skips the welcome email when createSeat returns an empty password (existing seat)", async () => {
+    constructEvent.mockReturnValue(checkoutEvent("evt_existing"));
+    sessionsRetrieve.mockResolvedValue(fakeSession());
+    createSeat.mockResolvedValueOnce({
+      id: "seat_1",
+      email: "buyer@example.com",
+      password: "",
+    });
+
+    const { POST } = await import("./route");
+    const res = await POST(postRequest());
+    expect(res.status).toBe(200);
+    expect(sendWelcomeEmail).not.toHaveBeenCalled();
+
+    const second = await POST(postRequest());
+    expect((await second.json()).duplicate).toBe(true);
   });
 });

@@ -123,7 +123,7 @@ describe("GET /api/sync-gpr", () => {
     const body = await res.json();
 
     expect(supabaseMock.upsertedRows).toEqual([]);
-    expect(supabaseMock.getRetireCall()).not.toBeNull();
-    expect(body.retired).toBe(5);
+    expect(supabaseMock.getRetireCall()).toBeNull();
+    expect(body.retired).toBe(0);
   });
 });

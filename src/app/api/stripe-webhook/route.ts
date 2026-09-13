@@ -104,6 +104,9 @@ async function provisionFromSession(session: Stripe.Checkout.Session): Promise<b
       role: "owner",
       activeUntil: periodOrGrace(session.subscription),
     });
+    // Empty password means the seat already existed -- access was extended,
+    // not newly provisioned. Don't send a second welcome (or rotate).
+    if (!seat.password) return true;
     const emailSent = await sendWelcomeEmail({
       to: seat.email,
       password: seat.password,
@@ -191,7 +194,10 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ["line_items.data.price", "subscription"],
     });
-    if (await provisionFromSession(session)) await markProcessed(event.id);
+    if (!(await provisionFromSession(session))) {
+      return NextResponse.json({ error: "provisioning incomplete" }, { status: 500 });
+    }
+    await markProcessed(event.id);
     return NextResponse.json({ received: true });
   }
 
@@ -201,8 +207,11 @@ export async function POST(request: NextRequest) {
       const invoice = await stripe.invoices.retrieve(invoiceId, {
         expand: ["lines.data", "parent.subscription_details.subscription"],
       });
-      if (await renewFromInvoice(invoice)) await markProcessed(event.id);
+      if (!(await renewFromInvoice(invoice))) {
+        return NextResponse.json({ error: "renewal incomplete" }, { status: 500 });
+      }
     }
+    await markProcessed(event.id);
     return NextResponse.json({ received: true });
   }
 

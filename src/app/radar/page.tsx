@@ -7,7 +7,7 @@ import { getRadarStats, getSampleRadarRows } from "@/lib/public-radar";
 export const metadata = {
   title: `Recompete radar | ${OPERATOR.productName}`,
   description:
-    "Facilities contracts approaching option exercise, period end, or a recompete window — classified from SAM.gov notice language, never from invented award-history dates.",
+    "Facilities contracts with options identified, period end, or a recompete window — classified from SAM.gov notice language, never from invented award-history dates.",
   alternates: { canonical: "/radar" },
 };
 export const dynamic = "force-dynamic";
@@ -62,7 +62,7 @@ export default async function RadarPage() {
             </p>
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-navy-950">Option exercise</h2>
+            <h2 className="text-lg font-semibold text-navy-950">Options identified</h2>
             <p className="mt-2 text-sm leading-relaxed text-ink/70">
               Base-plus-option language such as “four (4) 12-month option years”
               or “B+4”. The option count is stored when the notice states it.

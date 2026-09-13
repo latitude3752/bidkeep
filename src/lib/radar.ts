@@ -88,7 +88,7 @@ const SOLE_SOURCE_RE = /\bsole[- ]source\b/i;
 const RECOMPETE_CONTEXT_WINDOW = 100;
 
 const OPTION_RE =
-  /\b(?:option\s+years?|option\s+period|option\s+to\s+extend|exercise(?:s|d)?\s+(?:the\s+)?option|base(?:\s+year|\s+period)?(?:\s+\+\s*|\s+plus\s+|\s+with\s+)\d+|b\s*\+\s*\d+)\b/i;
+  /\b(?:option\s+years?|exercise(?:s|d)?\s+(?:the\s+)?option|base(?:\s+year|\s+period)?(?:\s+\+\s*|\s+plus\s+|\s+with\s+)\d+|b\s*\+\s*\d+)\b/i;
 
 const OPTION_YEARS_RE =
   /(?:with\s+)?(?:four|4|five|5|three|3|two|2|one|1|\d+)\s*(?:\((\d+)\)\s*)?(?:one[- ]year\s+|12[- ]month\s+)?option\s+years?/i;

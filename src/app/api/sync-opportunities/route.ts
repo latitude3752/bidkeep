@@ -31,7 +31,11 @@ function formatCeiling(n: number): string {
 
 /** A new-opportunity email candidate before eager scale enrichment fills in
  * scaleLabel (or leaves it null, for opportunities past the eager cap). */
-type PendingNotification = NotifiableOpportunity & { noticeId: string };
+type PendingNotification = NotifiableOpportunity & {
+  noticeId: string;
+  noticeType: string | null;
+  rawData: SamGovOpportunity;
+};
 
 /** Upserts a batch of SAM.gov results and tracks which are newly-discovered
  * and actionable, so a single new-opportunity email covers every search pass
@@ -93,6 +97,8 @@ async function upsertResults(
         responseDeadline: row.response_deadline,
         naicsCode: row.naics_code,
         scaleLabel: null,
+        noticeType: row.notice_type,
+        rawData: row.raw_data,
       });
     }
   }
@@ -163,7 +169,14 @@ export async function GET(request: NextRequest) {
         if (text) {
           await supabase
             .from("opportunities")
-            .update(radarPersistFields({ title: op.title, requirementsText: text }))
+            .update(
+              radarPersistFields({
+                title: op.title,
+                noticeType: op.noticeType,
+                rawData: op.rawData,
+                requirementsText: text,
+              })
+            )
             .eq("id", oppId);
         }
 

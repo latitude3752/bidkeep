@@ -68,6 +68,22 @@ describe("classifyRadarSignal", () => {
     ).toBe("recompete");
   });
 
+  it("does not treat bare FAR option-to-extend or option-period boilerplate as an option hit", () => {
+    expect(
+      classifyRadarSignal({
+        title: "Janitorial Services",
+        requirementsText:
+          "Option to Extend the Term of the Contract. The Government may extend the term of this contract by written notice to the Contractor.",
+      }).kind
+    ).toBeNull();
+    expect(
+      classifyRadarSignal({
+        title: "Grounds maintenance",
+        requirementsText: "Work performed during the option period is subject to the same terms.",
+      }).kind
+    ).toBeNull();
+  });
+
   it("extracts base+option language from live SAM custodial wording", () => {
     const result = classifyRadarSignal({
       title: "Custodial Services OH033",

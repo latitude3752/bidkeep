@@ -55,9 +55,11 @@ export async function GET(request: NextRequest) {
   // absence from a successful fetch is the only signal that it closed.
   // Never retire on a failed fetch -- errors.length > 0 means we don't
   // actually know what's still open, and treating that like "everything
-  // closed" would be worse than the stale row it's meant to fix.
+  // closed" would be worse than the stale row it's meant to fix. Also skip
+  // retirement when the successful fetch returned zero rows -- an empty
+  // result is more likely a query/filter miss than "every listing closed".
   let retired = 0;
-  if (errors.length === 0) {
+  if (errors.length === 0 && opportunities.length > 0) {
     const { count, error: retireErr } = await admin
       .from("gpr_opportunities")
       .update({ retired_at: runStartedAt }, { count: "exact" })

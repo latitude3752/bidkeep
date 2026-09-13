@@ -115,4 +115,16 @@ describe("GET /api/sync-tx-esbd", () => {
     expect(supabaseMock.getRetireCall()).toBeNull();
     expect(body.errors).toContain("tx-esbd upsert: connection reset");
   });
+
+  it("skips both upsert and retirement when nothing was fetched and there are no errors", async () => {
+    fetchResult = { opportunities: [], errors: [] };
+    supabaseMock.setRetireCount(7);
+    const { GET } = await import("./route");
+    const res = await GET(req());
+    const body = await res.json();
+
+    expect(supabaseMock.upsertedRows).toEqual([]);
+    expect(supabaseMock.getRetireCall()).toBeNull();
+    expect(body.retired).toBe(0);
+  });
 });

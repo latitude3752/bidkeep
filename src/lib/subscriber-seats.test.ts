@@ -101,7 +101,7 @@ describe("subscriber-seats", () => {
     ).resolves.toBeTruthy();
   });
 
-  it("re-provisions a revoked email instead of inserting a duplicate", async () => {
+  it("re-provisions a revoked email without rotating the password", async () => {
     const { createSeat, revokeSeat, getSeatByEmail } = await import("./subscriber-seats");
     const first = await createSeat({
       email: "Lead@Acme.test",
@@ -109,17 +109,22 @@ describe("subscriber-seats", () => {
       company: "Acme Drones",
     });
     await revokeSeat(first.id);
+    const until = new Date("2031-01-01T00:00:00.000Z");
     const reissued = await createSeat({
       email: "LEAD@acme.test",
-      name: "Pat",
+      name: "Pat Updated",
       company: "Acme Drones",
+      activeUntil: until,
     });
-    expect(reissued.password.length).toBeGreaterThanOrEqual(20);
-    expect(reissued.password).not.toBe(first.password);
+    expect(reissued.password).toBe("");
+    expect(reissued.password_hash).toBe(first.password_hash);
     expect(reissued.id).toBe(first.id);
     expect(reissued.email).toBe("lead@acme.test");
+    expect(reissued.name).toBe("Pat Updated");
+    expect(reissued.active_until).toBe(until.toISOString());
     const fetched = await getSeatByEmail("LEAD@acme.test");
     expect(fetched?.id).toBe(first.id);
+    expect(fetched?.password_hash).toBe(first.password_hash);
     expect(rows.filter((r) => r.email === "lead@acme.test")).toHaveLength(1);
   });
 

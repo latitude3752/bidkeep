@@ -58,8 +58,28 @@ export async function createSeat(input: {
   const existing = await getSeatByEmail(email);
   const active = (await listActiveSeats()).filter((seat) => seat.email !== email);
   assertCanAddSeat(active, input.company);
-  const password = generatePassword();
   const now = new Date().toISOString();
+  const supabase = getSupabaseAdmin();
+  if (existing) {
+    // Existing seat: extend/update metadata only. Rotating password_hash
+    // here would lock out a subscriber who already signed in (Stripe retry
+    // or a second checkout). Empty password signals "don't send a welcome".
+    const { data, error } = await supabase
+      .from("subscriber_seats")
+      .update({
+        name: input.name,
+        company: input.company.trim(),
+        role: input.role ?? "owner",
+        active_until: (input.activeUntil ?? new Date(Date.now() + PILOT_MS)).toISOString(),
+        updated_at: now,
+      })
+      .eq("email", email)
+      .select(SEAT_COLUMNS)
+      .single();
+    if (error) throw new Error(error.message);
+    return { ...(data as SubscriberSeat), password: "" };
+  }
+  const password = generatePassword();
   const payload = {
     email,
     password_hash: hashPassword(password),
@@ -68,17 +88,6 @@ export async function createSeat(input: {
     role: input.role ?? "owner",
     active_until: (input.activeUntil ?? new Date(Date.now() + PILOT_MS)).toISOString(),
   };
-  const supabase = getSupabaseAdmin();
-  if (existing) {
-    const { data, error } = await supabase
-      .from("subscriber_seats")
-      .update({ ...payload, updated_at: now })
-      .eq("email", email)
-      .select(SEAT_COLUMNS)
-      .single();
-    if (error) throw new Error(error.message);
-    return { ...(data as SubscriberSeat), password };
-  }
   const { data, error } = await supabase
     .from("subscriber_seats")
     .insert(payload)

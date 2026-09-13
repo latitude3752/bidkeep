@@ -75,7 +75,7 @@ export default async function RadarBoard({
           <h1 className="text-2xl font-bold text-navy-950">Recompete radar</h1>
           <p className="mt-1 text-sm text-ink/60">
             Facilities notices whose title, notice type, or description mentions a
-            recompete, option exercise, or period of performance — plus early-stage
+            recompete, options identified, or period of performance — plus early-stage
             notices with no incumbent evidence, labeled as possible opportunities
             rather than confirmed recompetes. Dates appear only when the notice
             itself includes them.
