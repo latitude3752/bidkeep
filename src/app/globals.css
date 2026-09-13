@@ -1,35 +1,59 @@
 @import "tailwindcss";
 
+/* House of Bid — BidKeep (watch board). Gold is FCC-only. */
 :root {
-  --color-navy-950: #05070d;
-  --color-navy-900: #0a1120;
-  --color-navy-800: #101a30;
-  --color-navy-700: #1a2947;
-  --color-gold-400: #e8b95e;
-  --color-gold-500: #d29a35;
-  --color-gold-600: #b07d22;
-  --color-cream: #efece3;
-  --color-cream-dark: #e4e0d3;
+  --color-paper: #f4f1ea;
   --color-ink: #14161c;
+  --color-muted: #5c6570;
+  --color-navy: #0a1120;
+  --color-navy-950: #0a1120;
+  --color-navy-900: #101820;
+  --color-navy-800: #1a2433;
+  --color-navy-700: #243044;
+  --color-border: #d9d3c7;
+  --color-hero: #12140f;
+  --color-hero-text: #e8e6dc;
+  --color-accent: #8fae8b;
+  --color-accent-ink: #12140f;
+  --color-accent-soft: rgba(143, 174, 139, 0.16);
+  --color-link: #3f5c3c;
+  --color-gold-400: var(--color-accent);
+  --color-gold-500: var(--color-accent);
+  --color-gold-600: var(--color-accent);
+  --color-gold-700: var(--color-link);
+  --color-cream: var(--color-paper);
+  --color-cream-dark: #e4e0d3;
 }
 
 @theme inline {
+  --color-paper: var(--color-paper);
+  --color-muted: var(--color-muted);
+  --color-navy: var(--color-navy);
   --color-navy-950: var(--color-navy-950);
   --color-navy-900: var(--color-navy-900);
   --color-navy-800: var(--color-navy-800);
   --color-navy-700: var(--color-navy-700);
+  --color-border: var(--color-border);
+  --color-hero: var(--color-hero);
+  --color-hero-text: var(--color-hero-text);
+  --color-accent: var(--color-accent);
+  --color-accent-ink: var(--color-accent-ink);
+  --color-accent-soft: var(--color-accent-soft);
+  --color-link: var(--color-link);
   --color-gold-400: var(--color-gold-400);
   --color-gold-500: var(--color-gold-500);
   --color-gold-600: var(--color-gold-600);
+  --color-gold-700: var(--color-gold-700);
   --color-cream: var(--color-cream);
   --color-cream-dark: var(--color-cream-dark);
   --color-ink: var(--color-ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display-face), var(--font-geist-sans);
 }
 
 body {
-  background: var(--color-cream);
+  background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }

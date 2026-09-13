@@ -1,5 +1,5 @@
 import Link from "next/link";
-import KeepMark from "@/components/KeepMark";
+import { ACCENT_CTA, ACCENT_CTA_GHOST, BRAND } from "@/lib/brand";
 
 const coverage = [
   {
@@ -37,43 +37,30 @@ const coverage = [
 export default function Home() {
   return (
     <>
-      <section className="relative overflow-hidden bg-navy-950 text-cream">
-        <KeepMark className="pointer-events-none absolute -left-16 bottom-0 h-64 w-auto text-cream/10 md:h-80" />
+      <section className="relative overflow-hidden bg-hero text-hero-text">
         <div className="relative mx-auto max-w-6xl px-6 py-28 md:py-36">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-gold-400">
-            Federal Opportunity Tracking
+          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-accent">
+            {BRAND.eyebrow}
           </p>
-          <h1 className="max-w-3xl text-4xl font-bold leading-tight md:text-6xl">
-            Facilities contracts you can actually staff, before they expire.
+          <h1 className="font-display max-w-3xl text-4xl font-bold leading-tight md:text-6xl">
+            {BRAND.heroTitle}
           </h1>
-          <p className="mt-6 max-w-2xl text-lg text-cream/80">
-            BidKeep watches SAM.gov for federal solicitations in janitorial,
-            grounds, security guards/patrol, and facilities support / base ops
-            — with set-aside type on every row, so SDVOSB, 8(a), HUBZone, and
-            WOSB shops see the work written for them.
+          <p className="mt-6 max-w-2xl font-mono text-sm tracking-wide text-accent/90">
+            option year · period of performance · follow-on
+          </p>
+          <p className="mt-4 max-w-2xl text-lg text-hero-text/80">
+            {BRAND.heroLead}
           </p>
           <div className="mt-10 flex flex-wrap gap-4">
-            <Link
-              href="/radar"
-              className="rounded-full bg-gold-500 px-7 py-3 text-sm font-semibold text-navy-950 transition-colors hover:bg-gold-400"
-            >
-              Recompete radar
+            <Link href={BRAND.primaryCta.href} className={ACCENT_CTA}>
+              {BRAND.primaryCta.label}
             </Link>
-            <Link
-              href="/opportunities"
-              className="rounded-full border border-cream/30 px-7 py-3 text-sm font-semibold text-cream hover:border-gold-400 hover:text-gold-400"
-            >
+            <Link href="/opportunities" className={ACCENT_CTA_GHOST}>
               See what&apos;s tracked
             </Link>
             <Link
-              href="/demo"
-              className="rounded-full px-7 py-3 text-sm font-semibold text-cream/80 hover:text-gold-400"
-            >
-              Dashboard preview
-            </Link>
-            <Link
               href="/pricing"
-              className="rounded-full px-7 py-3 text-sm font-semibold text-cream/80 hover:text-gold-400"
+              className="inline-block rounded-lg px-7 py-3 text-sm font-semibold text-hero-text/80 hover:text-accent"
             >
               $100/mo pricing
             </Link>
@@ -105,8 +92,8 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="mt-6 rounded-2xl border-2 border-gold-500 bg-white p-7 shadow-sm">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
+        <div className="mt-6 rounded-lg border-2 border-accent bg-white p-7 shadow-sm">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-accent">
             Secondary signal
           </p>
           <h3 className="text-lg font-semibold text-navy-950">
@@ -122,25 +109,22 @@ export default function Home() {
           </p>
           <Link
             href="/grants"
-            className="mt-4 inline-block text-sm font-semibold text-gold-600 hover:text-gold-500"
+            className="mt-4 inline-block text-sm font-semibold text-link hover:text-accent"
           >
             See tracked grant programs →
           </Link>
         </div>
       </section>
 
-      <section className="bg-navy-900 text-cream">
+      <section className="bg-hero text-hero-text">
         <div className="mx-auto max-w-6xl px-6 py-16 text-center">
-          <h2 className="text-2xl font-bold md:text-3xl">$100/month</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-cream/70">
+          <h2 className="font-display text-2xl font-bold md:text-3xl">$100/month</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-hero-text/70">
             The full dashboard of matching SAM.gov notices, set-aside type on
             every row, and an email digest so you do not have to remember to
             check. Up to 5 seats per company.
           </p>
-          <Link
-            href="/start"
-            className="mt-8 inline-block rounded-full bg-gold-500 px-7 py-3 text-sm font-semibold text-navy-950 transition-colors hover:bg-gold-400"
-          >
+          <Link href="/start" className={`${ACCENT_CTA} mt-8`}>
             Start for $100/mo
           </Link>
         </div>

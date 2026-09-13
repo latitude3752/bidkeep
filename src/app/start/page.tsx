@@ -1,3 +1,4 @@
+import { ACCENT_CTA } from "@/lib/brand";
 import { startPilotHref } from "@/lib/start-pilot";
 import { submitContactRequest } from "@/app/start/actions";
 import CommercialLinks from "@/components/CommercialLinks";
@@ -9,8 +10,7 @@ export const metadata = {
   alternates: { canonical: "/start" },
 };
 
-const GOLD_CTA =
-  "inline-block rounded-full bg-gold-500 px-7 py-3 text-sm font-semibold text-navy-950 transition-colors hover:bg-gold-400";
+const GOLD_CTA = ACCENT_CTA;
 
 const INPUT_CLASS =
   "mt-1 w-full rounded-lg border border-navy-950/20 px-3 py-2 text-sm outline-none focus:border-gold-500";

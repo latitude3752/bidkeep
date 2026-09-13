@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ACCENT_CTA } from "@/lib/brand";
 import { startPilotHref } from "@/lib/start-pilot";
 import { OPERATOR } from "@/lib/operator";
 
@@ -9,8 +10,7 @@ export const metadata = {
   alternates: { canonical: "/pricing" },
 };
 
-const GOLD_CTA =
-  "inline-block rounded-full bg-gold-500 px-7 py-3 text-sm font-semibold text-navy-950 transition-colors hover:bg-gold-400";
+const GOLD_CTA = ACCENT_CTA;
 
 export default function PricingPage() {
   const href = startPilotHref(process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_URL);

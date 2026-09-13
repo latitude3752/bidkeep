@@ -14,8 +14,8 @@ export default async function OpengraphImage() {
           flexDirection: "column",
           justifyContent: "center",
           padding: "80px",
-          background: "#05070d",
-          color: "#efece3",
+          background: "#12140f",
+          color: "#e8e6dc",
           fontFamily: "sans-serif",
         }}
       >
@@ -26,10 +26,10 @@ export default async function OpengraphImage() {
             fontWeight: 600,
             letterSpacing: 4,
             textTransform: "uppercase",
-            color: "#e8b95e",
+            color: "#8fae8b",
           }}
         >
-          Federal Opportunity Tracking
+          Janitorial · grounds · guards · base ops
         </div>
         <div
           style={{
@@ -52,7 +52,7 @@ export default async function OpengraphImage() {
             maxWidth: 880,
           }}
         >
-          SAM.gov tracking for federal facilities & building services
+          When the option year is the real deadline.
         </div>
       </div>
     ),
