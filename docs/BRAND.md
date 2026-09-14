@@ -5,7 +5,7 @@
 **Domain:** https://trybidkeep.com  
 **Seller:** Fountain City Capital, LLC  
 **Direction locked:** Watch board (option A) + radar as hero graphic (from B)  
-**Status:** TOKENS SHIPPED 2026-09-13 — marketing heroes + CSS. Lockups/SVGs next.
+**Status:** TOKENS SHIPPED 2026-09-13 — marketing heroes + CSS. AA contrast pass shipped 2026-09-13 (gold-600 routed to Link instead of Accent; grant-callout card off Accent onto Link). /radar finished the same day — it had been skipped in the tokens commit and still had rounded-full gold-500 pill CTAs; now ACCENT_CTA + an 8px-radius Link-bordered outline button, matching / and /pricing. Lockups/SVGs next.
 
 ---
 
