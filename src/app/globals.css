@@ -19,7 +19,7 @@
   --color-link: #3f5c3c;
   --color-gold-400: var(--color-accent);
   --color-gold-500: var(--color-accent);
-  --color-gold-600: var(--color-accent);
+  --color-gold-600: var(--color-link);
   --color-gold-700: var(--color-link);
   --color-cream: var(--color-paper);
   --color-cream-dark: #e4e0d3;

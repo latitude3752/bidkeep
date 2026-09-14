@@ -92,8 +92,8 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="mt-6 rounded-lg border-2 border-accent bg-white p-7 shadow-sm">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-accent">
+        <div className="mt-6 rounded-lg border-2 border-link bg-white p-7 shadow-sm">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-link">
             Secondary signal
           </p>
           <h3 className="text-lg font-semibold text-navy-950">
@@ -109,7 +109,7 @@ export default function Home() {
           </p>
           <Link
             href="/grants"
-            className="mt-4 inline-block text-sm font-semibold text-link hover:text-accent"
+            className="mt-4 inline-block text-sm font-semibold text-link hover:underline"
           >
             See tracked grant programs →
           </Link>

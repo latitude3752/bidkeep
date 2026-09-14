@@ -1,6 +1,7 @@
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import SampleRadarList from "@/components/SampleRadarList";
+import { ACCENT_CTA } from "@/lib/brand";
 import { OPERATOR } from "@/lib/operator";
 import { getRadarStats, getSampleRadarRows } from "@/lib/public-radar";
 
@@ -85,15 +86,12 @@ export default async function RadarPage() {
           </div>
         </div>
         <div className="mt-10 flex flex-wrap gap-4">
-          <Link
-            href="/set-asides"
-            className="inline-block rounded-full bg-gold-500 px-7 py-3 text-sm font-semibold text-navy-950 transition-colors hover:bg-gold-400"
-          >
+          <Link href="/set-asides" className={ACCENT_CTA}>
             Set-asides &amp; SCA
           </Link>
           <Link
             href="/start"
-            className="inline-block rounded-full border border-navy-950/20 px-7 py-3 text-sm font-semibold text-navy-950 hover:border-gold-500"
+            className="inline-block rounded-lg border border-navy-950/20 px-7 py-3 text-sm font-semibold text-navy-950 transition-colors hover:border-link"
           >
             Open the full radar
           </Link>
