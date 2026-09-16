@@ -185,6 +185,30 @@ describe("runGrantSyncChunk", () => {
     expect(result.errors).toEqual(["funding-opp 10.766: Grants.gov 503"]);
   });
 
+  it("keeps later ALN award upserts when one awards page throws after retries", async () => {
+    const upserted: string[] = [];
+    const result = await runGrantSyncChunk({
+      alns,
+      cursor: { pass: "awards", aln: "10.766", awardPage: 1 },
+      deadlineMs: Number.POSITIVE_INFINITY,
+      searchFunding: async () => [],
+      searchAwardPage: async (aln) => {
+        if (aln === "10.766") throw new Error("USAspending API error 503: unavailable");
+        return { awards: [`aw-${aln}`], hasNext: false };
+      },
+      upsertFunding: async () => ({ upserted: 0 }),
+      upsertAwards: async (awards) => {
+        upserted.push(...awards);
+        return { upserted: awards.length };
+      },
+    });
+
+    expect(result.complete).toBe(true);
+    expect(result.errors).toEqual(["awards 10.766: USAspending API error 503: unavailable"]);
+    expect(upserted).toEqual(["aw-14.872"]);
+    expect(result.upserted).toBe(1);
+  });
+
   it("persists the next cursor after each finished unit", async () => {
     const ctx = deps({});
     await ctx.run();
