@@ -11,6 +11,10 @@ function jsonResponse(body: unknown): Response {
   return { ok: true, json: async () => body } as Response;
 }
 
+function noSleep() {
+  return vi.fn<(ms: number) => Promise<void>>(async () => {});
+}
+
 describe("USAspending grant award search", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
@@ -124,7 +128,7 @@ describe("USAspending grant award search", () => {
   });
 
   it("retries a 503 with exponential backoff then succeeds", async () => {
-    const sleep = vi.fn(async () => {});
+    const sleep = noSleep();
     vi.mocked(fetch)
       .mockResolvedValueOnce({
         ok: false,
@@ -147,7 +151,7 @@ describe("USAspending grant award search", () => {
   });
 
   it("retries a 502 then a 504 before succeeding", async () => {
-    const sleep = vi.fn(async () => {});
+    const sleep = noSleep();
     vi.mocked(fetch)
       .mockResolvedValueOnce({
         ok: false,
@@ -177,14 +181,14 @@ describe("USAspending grant award search", () => {
   });
 
   it("retries an empty JSON body then succeeds", async () => {
-    const sleep = vi.fn(async () => {});
+    const sleep = noSleep();
     vi.mocked(fetch)
       .mockResolvedValueOnce({
         ok: true,
         json: async () => {
           throw new SyntaxError("Unexpected end of JSON input");
         },
-      } as Response)
+      } as unknown as Response)
       .mockResolvedValueOnce(
         jsonResponse({
           results: [{ generated_internal_id: "c", "Recipient Name": "Agency C" }],
@@ -200,7 +204,7 @@ describe("USAspending grant award search", () => {
   });
 
   it("retries a fetch TypeError then succeeds", async () => {
-    const sleep = vi.fn(async () => {});
+    const sleep = noSleep();
     vi.mocked(fetch)
       .mockRejectedValueOnce(new TypeError("fetch failed"))
       .mockResolvedValueOnce(
@@ -217,7 +221,7 @@ describe("USAspending grant award search", () => {
   });
 
   it("gives up after retries on a persistent 504", async () => {
-    const sleep = vi.fn(async () => {});
+    const sleep = noSleep();
     vi.mocked(fetch).mockResolvedValue({
       ok: false,
       status: 504,
@@ -237,7 +241,7 @@ describe("USAspending grant award search", () => {
   });
 
   it("does not retry a non-transient fetch Error", async () => {
-    const sleep = vi.fn(async () => {});
+    const sleep = noSleep();
     vi.mocked(fetch).mockRejectedValue(new Error("USAspending 503"));
 
     await expect(searchAwardPageByProgramNumber("81.128", 1, { sleep })).rejects.toThrow(
