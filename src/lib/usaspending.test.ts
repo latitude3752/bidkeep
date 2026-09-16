@@ -3,6 +3,8 @@ import {
   searchAwardPageByProgramNumber,
   searchAwardsByProgramNumber,
   searchAwardsByProgramNumbers,
+  USASPENDING_MAX_ATTEMPTS,
+  usaspendingBackoffMs,
 } from "./usaspending";
 
 function jsonResponse(body: unknown): Response {
@@ -118,6 +120,131 @@ describe("USAspending grant award search", () => {
     await expect(searchAwardsByProgramNumber("97.161")).rejects.toThrow(
       "USAspending API error 500"
     );
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries a 503 with exponential backoff then succeeds", async () => {
+    const sleep = vi.fn(async () => {});
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        text: async () => "unavailable",
+      } as Response)
+      .mockResolvedValueOnce(
+        jsonResponse({
+          results: [{ generated_internal_id: "a", "Recipient Name": "Agency A" }],
+          page_metadata: { page: 1, hasNext: false },
+        })
+      );
+
+    const page = await searchAwardPageByProgramNumber("10.766", 1, { sleep });
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(1);
+    expect(sleep).toHaveBeenCalledWith(usaspendingBackoffMs(0));
+    expect(page.awards.map((a) => a.awardId)).toEqual(["a"]);
+  });
+
+  it("retries a 502 then a 504 before succeeding", async () => {
+    const sleep = vi.fn(async () => {});
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 502,
+        text: async () => "bad gateway",
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 504,
+        text: async () => "gateway timeout",
+      } as Response)
+      .mockResolvedValueOnce(
+        jsonResponse({
+          results: [{ generated_internal_id: "b", "Recipient Name": "Agency B" }],
+          page_metadata: { page: 1, hasNext: false },
+        })
+      );
+
+    const page = await searchAwardPageByProgramNumber("14.218", 1, { sleep });
+
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(sleep.mock.calls.map((call) => call[0])).toEqual([
+      usaspendingBackoffMs(0),
+      usaspendingBackoffMs(1),
+    ]);
+    expect(page.awards.map((a) => a.awardId)).toEqual(["b"]);
+  });
+
+  it("retries an empty JSON body then succeeds", async () => {
+    const sleep = vi.fn(async () => {});
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => {
+          throw new SyntaxError("Unexpected end of JSON input");
+        },
+      } as Response)
+      .mockResolvedValueOnce(
+        jsonResponse({
+          results: [{ generated_internal_id: "c", "Recipient Name": "Agency C" }],
+          page_metadata: { page: 1, hasNext: false },
+        })
+      );
+
+    const page = await searchAwardPageByProgramNumber("14.228", 1, { sleep });
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(1);
+    expect(page.awards.map((a) => a.awardId)).toEqual(["c"]);
+  });
+
+  it("retries a fetch TypeError then succeeds", async () => {
+    const sleep = vi.fn(async () => {});
+    vi.mocked(fetch)
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          results: [{ generated_internal_id: "d", "Recipient Name": "Agency D" }],
+          page_metadata: { page: 1, hasNext: false },
+        })
+      );
+
+    const page = await searchAwardPageByProgramNumber("81.041", 1, { sleep });
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(page.awards.map((a) => a.awardId)).toEqual(["d"]);
+  });
+
+  it("gives up after retries on a persistent 504", async () => {
+    const sleep = vi.fn(async () => {});
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 504,
+      text: async () => "gateway timeout",
+    } as Response);
+
+    await expect(searchAwardPageByProgramNumber("14.872", 1, { sleep })).rejects.toThrow(
+      "USAspending API error 504: gateway timeout"
+    );
+    expect(fetch).toHaveBeenCalledTimes(USASPENDING_MAX_ATTEMPTS);
+    expect(sleep).toHaveBeenCalledTimes(USASPENDING_MAX_ATTEMPTS - 1);
+    expect(sleep.mock.calls.map((call) => call[0])).toEqual([
+      usaspendingBackoffMs(0),
+      usaspendingBackoffMs(1),
+      usaspendingBackoffMs(2),
+    ]);
+  });
+
+  it("does not retry a non-transient fetch Error", async () => {
+    const sleep = vi.fn(async () => {});
+    vi.mocked(fetch).mockRejectedValue(new Error("USAspending 503"));
+
+    await expect(searchAwardPageByProgramNumber("81.128", 1, { sleep })).rejects.toThrow(
+      "USAspending 503"
+    );
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(sleep).not.toHaveBeenCalled();
   });
 
   it("searchAwardPageByProgramNumber returns a single page and hasNext", async () => {
