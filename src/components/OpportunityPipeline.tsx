@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getCurrentSeat } from "@/lib/current-seat";
-import { getAllNaicsCodes, listRelevanceVotes, distanceFromZipMiles } from "@netacracy/bid-core";
+import { getAllNaicsCodes, distanceFromZipMiles } from "@netacracy/bid-core";
+import { listActorRelevanceVotes } from "@/lib/actor-relevance-votes";
 import OpportunityPipelineClient from "@/components/OpportunityPipelineClient";
 import { type Row, parseFilters, parsePage, parseSort } from "@/lib/opportunity-pipeline";
 
@@ -68,10 +69,7 @@ export default async function OpportunityPipeline({
   const actorKey = seat?.id ?? (viewer === "founder" ? "founder" : "");
   let votes = new Map<string, boolean>();
   try {
-    votes = await listRelevanceVotes(
-      actorKey,
-      rows.map((r) => r.id)
-    );
+    votes = await listActorRelevanceVotes(actorKey);
   } catch (err) {
     console.error("relevance votes unavailable:", err);
   }
